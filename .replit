@@ -3,6 +3,7 @@ modules = ["python-3.11"]
 
 [nix]
 channel = "stable-25_05"
+packages = ["gitFull", "glibcLocales", "playwright-driver"]
 
 [unitTest]
 language = "python3"
@@ -13,3 +14,7 @@ requiredFiles = [".replit", "replit.nix"]
 [deployment]
 run = ["python3", "main.py"]
 deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 8000
+externalPort = 80
