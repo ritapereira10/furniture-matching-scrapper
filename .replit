@@ -18,3 +18,15 @@ deploymentTarget = "cloudrun"
 [[ports]]
 localPort = 8000
 externalPort = 80
+
+[workflows]
+runButton = "Run FastAPI"
+
+[[workflows.workflow]]
+name = "Run FastAPI"
+author = 45831109
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "uvicorn main:app --host=0.0.0.0 --port=8000 --reload"
