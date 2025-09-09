@@ -3,7 +3,7 @@ modules = ["python-3.11"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["geckodriver", "gitFull", "glibcLocales", "playwright-driver", "xcodebuild", "zlib"]
+packages = ["geckodriver", "gitFull", "glibcLocales", "playwright-driver", "xcodebuild", "zlib", "jq"]
 
 [unitTest]
 language = "python3"

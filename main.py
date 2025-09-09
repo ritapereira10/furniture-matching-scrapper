@@ -1,10 +1,16 @@
 from fastapi import FastAPI, Query
+from pydantic import BaseModel
 import uvicorn
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import re
 from typing import Optional, List
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -67,23 +73,41 @@ def scrape(
 
             soup = BeautifulSoup(r.text, "lxml")
             cards = soup.select(SEL["card"])
+            logger.info(f"Found {len(cards)} cards on page {p} for query '{query}'")
+            
+            if len(cards) == 0:
+                # Try alternative selectors if the main one doesn't work
+                alt_selectors = ["li[data-testid='listing-item']", "article[data-testid='listing']", ".hz-Listing", ".mp-listing-item", "li.mp-Listing-item"]
+                for alt_sel in alt_selectors:
+                    cards = soup.select(alt_sel)
+                    if len(cards) > 0:
+                        logger.info(f"Using alternative selector '{alt_sel}' - found {len(cards)} cards")
+                        break
+                        
+            # Debug: log first card HTML structure to understand the format
+            if len(cards) > 0 and p == 1:
+                logger.info(f"First card HTML preview: {str(cards[0])[:500]}...")
+            
             for c in cards:
                 a = c.select_one(SEL["link"])
                 if not a:
                     continue
                 href = a.get("href", "")
+                if not href or not isinstance(href, str):
+                    continue
                 full_url = href if href.startswith("http") else urljoin(BASE, href)
                 lid = extract_id(full_url)
                 if lid in seen:
                     continue
                 seen.add(lid)
 
-                title_el = c.select_one(SEL["title"])
-                price_el = c.select_one(SEL["price"])
-                loc_el = c.select_one(SEL["location"])
-                date_el = c.select_one(SEL["date"])
-                img_el = c.select_one(SEL["image"])
-                desc_el = c.select_one(SEL["desc"])
+                # Try multiple selectors for each field
+                title_el = c.select_one(SEL["title"]) or c.select_one("h3") or c.select_one(".hz-Listing-title")
+                price_el = c.select_one(SEL["price"]) or c.select_one(".hz-Listing-price") or c.select_one("[data-testid*='price']")
+                loc_el = c.select_one(SEL["location"]) or c.select_one(".hz-Listing-location") or c.select_one("[data-testid*='location']")
+                date_el = c.select_one(SEL["date"]) or c.select_one(".hz-Listing-date") or c.select_one("[data-testid*='date']")
+                img_el = c.select_one(SEL["image"]) or c.select_one("img")
+                desc_el = c.select_one(SEL["desc"]) or c.select_one(".hz-Listing-description") or c.select_one("[data-testid*='desc']")
 
                 item = {
                     "id": lid,
@@ -105,6 +129,105 @@ def scrape(
 
     except Exception as e:
         return {"error": "An error occurred while scraping", "details": str(e)}
+
+class BatchSearchRequest(BaseModel):
+    queries: List[str]
+    max_results_per_query: Optional[int] = 20
+    pages_per_query: Optional[int] = 1
+
+@app.post("/batch-search")
+def batch_search(request: BatchSearchRequest):
+    """
+    Batch search multiple queries at once (useful for Pinterest board matching)
+    
+    - **queries**: List of search terms (e.g., ["vintage chair", "ceramic vase", "antique lamp"])
+    - **max_results_per_query**: Maximum results per query (default: 20)
+    - **pages_per_query**: Pages to search per query (default: 1)
+    """
+    try:
+        results = {}
+        total_items = 0
+        
+        for query in request.queries:
+            logger.info(f"Batch searching for: {query}")
+            
+            # Use the existing scrape function logic
+            seen = set()
+            items: List[dict] = []
+
+            for p in range(1, (request.pages_per_query or 1) + 1):
+                url = f"{BASE}/q/{query}/?p={p}"
+                r = requests.get(url, headers=HEADERS, timeout=20)
+                r.raise_for_status()
+
+                soup = BeautifulSoup(r.text, "lxml")
+                cards = soup.select(SEL["card"])
+                
+                if len(cards) == 0:
+                    # Try alternative selectors
+                    alt_selectors = ["li[data-testid='listing-item']", "article[data-testid='listing']", ".hz-Listing", ".mp-listing-item", "li.mp-Listing-item"]
+                    for alt_sel in alt_selectors:
+                        cards = soup.select(alt_sel)
+                        if len(cards) > 0:
+                            break
+                
+                for c in cards[:request.max_results_per_query or 20]:
+                    a = c.select_one(SEL["link"])
+                    if not a:
+                        continue
+                    href = a.get("href", "")
+                    if not href or not isinstance(href, str):
+                        continue
+                    full_url = href if href.startswith("http") else urljoin(BASE, href)
+                    lid = extract_id(full_url)
+                    if lid in seen:
+                        continue
+                    seen.add(lid)
+
+                    # Try multiple selectors for each field
+                    title_el = c.select_one(SEL["title"]) or c.select_one("h3") or c.select_one(".hz-Listing-title")
+                    price_el = c.select_one(SEL["price"]) or c.select_one(".hz-Listing-price") or c.select_one("[data-testid*='price']")
+                    loc_el = c.select_one(SEL["location"]) or c.select_one(".hz-Listing-location") or c.select_one("[data-testid*='location']")
+                    date_el = c.select_one(SEL["date"]) or c.select_one(".hz-Listing-date") or c.select_one("[data-testid*='date']")
+                    img_el = c.select_one(SEL["image"]) or c.select_one("img")
+                    desc_el = c.select_one(SEL["desc"]) or c.select_one(".hz-Listing-description") or c.select_one("[data-testid*='desc']")
+
+                    item = {
+                        "id": lid,
+                        "url": full_url,
+                        "title": title_el.get_text(strip=True) if title_el else "",
+                        "price_text": price_el.get_text(strip=True) if price_el else None,
+                        "price_eur": parse_price(price_el.get_text(strip=True)) if price_el else None,
+                        "location": loc_el.get_text(strip=True) if loc_el else None,
+                        "posted_at": date_el.get_text(strip=True) if date_el else None,
+                        "image_url": img_el.get("src") if img_el and img_el.has_attr("src") else None,
+                        "description": desc_el.get_text(strip=True) if desc_el else None,
+                    }
+                    items.append(item)
+
+            # Sort items by price (priced items first, lowest price first)
+            items.sort(key=lambda x: (x["price_eur"] is None, x["price_eur"] if x["price_eur"] is not None else 1e12))
+            
+            results[query] = {
+                "count": len(items),
+                "items": items
+            }
+            total_items += len(items)
+        
+        return {
+            "total_queries": len(request.queries),
+            "total_items": total_items,
+            "results": results
+        }
+        
+    except Exception as e:
+        logger.error(f"Batch search failed: {e}")
+        return {"error": "An error occurred during batch search", "details": str(e)}
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "service": "marktplaats-scraper"}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
