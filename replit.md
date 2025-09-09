@@ -1,6 +1,6 @@
 # Overview
 
-This is a FastAPI-based web scraper designed to extract data from Marktplaats (Dutch marketplace platform). The application provides a REST API interface for triggering scraping operations and retrieving marketplace data. Currently in early development stage with basic API structure and placeholder functionality.
+This is a FastAPI-based web scraper designed to extract data from Marktplaats (Dutch marketplace platform) for Pinterest board matching. The application provides a REST API interface for searching Marktplaats listings and retrieving structured marketplace data including titles, prices, locations, and links. The scraper is fully functional and optimized for batch processing to match Pinterest board items with available Marktplaats listings.
 
 # User Preferences
 
@@ -19,21 +19,32 @@ Preferred communication style: Simple, everyday language.
 - **Development Server**: Configured to run on host `0.0.0.0` and port `5000` for accessibility
 
 ## Scraping Architecture
-- **Placeholder Implementation**: Current scraping functionality returns mock data for testing
-- **Extensible Design**: Structure allows for future integration of actual web scraping libraries
-- **Synchronous Processing**: Current implementation uses blocking operations (may need async enhancement)
+- **Production-Ready Implementation**: Fully functional scraper that extracts real data from Marktplaats
+- **Adaptive Selectors**: Uses primary and fallback CSS selectors to handle website structure changes
+- **Batch Processing**: Supports multiple simultaneous searches for Pinterest board matching
+- **Data Extraction**: Captures title, price, location, description, images, and direct links
+- **Price Parsing**: Handles both fixed prices and negotiable items ("Bieden")
+- **Deduplication**: Prevents duplicate listings using unique ID extraction
+- **Rate Limiting**: Implements respectful scraping with delays and proper headers
 
 # External Dependencies
 
 ## Core Dependencies
-- **FastAPI**: Web framework for building the API
-- **Uvicorn**: ASGI server for running the application
+- **FastAPI**: Web framework for building the API with automatic documentation
+- **Uvicorn**: ASGI server for running the application with hot reload
+- **BeautifulSoup4**: HTML parsing library for extracting listing data
+- **Requests**: HTTP client for making web requests to Marktplaats
+- **lxml**: Fast XML/HTML parser for BeautifulSoup
+- **Pydantic**: Data validation for API request/response models
 
-## Target Platform
-- **Marktplaats**: Dutch online marketplace platform that will be scraped for data
+## API Endpoints
+- **GET /scrape**: Single search with pagination support
+- **POST /batch-search**: Multiple searches for Pinterest board matching  
+- **GET /health**: Health check endpoint
+- **GET /**: API documentation and endpoint overview
 
-## Potential Future Dependencies
-- **Web Scraping Libraries**: BeautifulSoup, Scrapy, or Selenium for actual scraping implementation
-- **HTTP Client**: Requests or HTTPX for making web requests
-- **Database**: Storage solution for scraped data (not yet implemented)
-- **Rate Limiting**: Libraries for managing request frequency to avoid being blocked
+## Integration Features
+- **Pinterest Board Matching**: Designed to process multiple search terms from Pinterest boards
+- **Structured Data Output**: Returns consistent JSON format for easy frontend integration
+- **Error Handling**: Graceful handling of network issues and parsing errors
+- **Logging**: Comprehensive logging for debugging and monitoring
