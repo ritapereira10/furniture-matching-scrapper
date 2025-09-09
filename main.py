@@ -12,7 +12,34 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+app = FastAPI(
+    title="Marktplaats Scraper API", 
+    description="""
+    ## Marktplaats Scraper API for Pinterest Board Matching
+    
+    This API scrapes Marktplaats listings to help match items from Pinterest boards with available marketplace items.
+    
+    ### Main Endpoints:
+    - **GET /scrape**: Single search query with pagination
+    - **POST /batch-search**: Multiple search queries for Pinterest board matching
+    - **GET /health**: Health check endpoint
+    
+    ### Usage for Pinterest Integration:
+    1. Extract item descriptions from Pinterest board
+    2. Use `/batch-search` with list of search terms
+    3. Get structured Marktplaats listings with titles, prices, locations, and links
+    
+    ### Data Returned:
+    - **title**: Item title from Marktplaats
+    - **price_eur**: Numeric price in euros (if available)
+    - **price_text**: Raw price text (includes "Bieden" for negotiable items)
+    - **location**: Item location/seller area
+    - **url**: Direct link to Marktplaats listing
+    - **image_url**: Product image URL
+    - **description**: Item description (when available)
+    """,
+    version="1.0.0"
+)
 
 BASE = "https://www.marktplaats.nl"
 HEADERS = {
