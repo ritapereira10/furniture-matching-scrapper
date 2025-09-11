@@ -1,4 +1,6 @@
 from fastapi import FastAPI, Query
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
 import requests
@@ -7,10 +9,18 @@ from urllib.parse import urljoin
 import re
 from typing import Optional, List
 import logging
+import os
+import json
+from openai import OpenAI
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Initialize OpenAI client
+# the newest OpenAI model is "gpt-5" which was released August 7, 2025.
+# do not change this unless explicitly requested by the user
+openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 app = FastAPI(
     title="Marktplaats Scraper API", 
@@ -80,9 +90,31 @@ def extract_id(url: str) -> str:
     m = re.search(r"/v/(\d+)", url)
     return m.group(1) if m else re.sub(r"\W+", "", url)[-24:]
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def read_root():
-    return {"message": "Marktplaats Scraper API"}
+    """Serve the main search interface"""
+    try:
+        with open("templates/index.html", "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>Search Interface Not Found</h1><p>Please ensure templates/index.html exists.</p>")
+
+@app.get("/api")
+def api_info():
+    """API information endpoint"""
+    return {
+        "service": "Marktplaats Scraper API",
+        "version": "1.0.0",
+        "endpoints": {
+            "main": "/",
+            "single_search": "/scrape?query={search_term}&pages={number}",
+            "batch_search": "POST /batch-search",
+            "smart_search": "POST /smart-search",
+            "health_check": "/health",
+            "documentation": "/docs"
+        },
+        "description": "API for scraping Marktplaats listings with smart natural language search"
+    }
 
 @app.get("/scrape")
 def scrape(
@@ -160,7 +192,9 @@ def scrape(
 class BatchSearchRequest(BaseModel):
     queries: List[str]
     max_results_per_query: Optional[int] = 20
-    pages_per_query: Optional[int] = 1
+
+class SmartSearchRequest(BaseModel):
+    query: str
 
 @app.post("/batch-search")
 def batch_search(request: BatchSearchRequest):
@@ -182,7 +216,7 @@ def batch_search(request: BatchSearchRequest):
             seen = set()
             items: List[dict] = []
 
-            for p in range(1, (request.pages_per_query or 1) + 1):
+            for p in range(1, 2):
                 url = f"{BASE}/q/{query}/?p={p}"
                 r = requests.get(url, headers=HEADERS, timeout=20)
                 r.raise_for_status()
@@ -250,6 +284,199 @@ def batch_search(request: BatchSearchRequest):
     except Exception as e:
         logger.error(f"Batch search failed: {e}")
         return {"error": "An error occurred during batch search", "details": str(e)}
+
+def parse_natural_language_query(query: str) -> dict:
+    """Parse natural language search query to extract search parameters"""
+    # Simple regex-based parsing for MVP
+    query_lower = query.lower()
+    
+    # Extract max price
+    max_price = None
+    price_patterns = [
+        r'max (\d+) eur',
+        r'onder (\d+) eur',
+        r'tot (\d+) eur',
+        r'max (\d+)',
+        r'(\d+) eur max',
+        r'maximum (\d+)'
+    ]
+    for pattern in price_patterns:
+        match = re.search(pattern, query_lower)
+        if match:
+            max_price = int(match.group(1))
+            break
+    
+    # Extract location
+    location = None
+    dutch_cities = ['amsterdam', 'rotterdam', 'utrecht', 'eindhoven', 'tilburg', 'groningen', 'almere', 'breda', 'nijmegen', 'haarlem', 'enschede', 'apeldoorn', 'arnhem', 'zaanstad', 'den haag', 'haag', 'maastricht', 'dordrecht', 'leiden', 'zoetermeer']
+    for city in dutch_cities:
+        if city in query_lower:
+            location = city
+            break
+    
+    # Extract distance
+    radius_km = None
+    km_match = re.search(r'(\d+)\s*km', query_lower)
+    if km_match:
+        radius_km = int(km_match.group(1))
+    
+    # Extract style
+    style = None
+    styles = ['vintage', 'retro', 'modern', 'antiek', 'design', 'industrieel', 'scandinavisch']
+    for s in styles:
+        if s in query_lower:
+            style = s
+            break
+    
+    # Extract item type and convert to Dutch
+    item_type = None
+    item_translations = {
+        'chair': 'stoel',
+        'table': 'tafel',
+        'desk': 'bureau',
+        'sofa': 'bank',
+        'lamp': 'lamp',
+        'cabinet': 'kast',
+        'shelf': 'plank'
+    }
+    
+    # Check for Dutch terms first
+    dutch_items = ['stoel', 'tafel', 'bureau', 'bank', 'lamp', 'kast', 'plank', 'dressoir', 'kledingkast']
+    for item in dutch_items:
+        if item in query_lower:
+            item_type = item
+            break
+    
+    # Check for English terms and translate
+    if not item_type:
+        for eng, dutch in item_translations.items():
+            if eng in query_lower:
+                item_type = dutch
+                break
+    
+    # Create search terms by removing price and location info
+    search_terms = query_lower
+    # Remove price patterns
+    for pattern in [r'max \d+ eur[o]?', r'onder \d+ eur[o]?', r'tot \d+ eur[o]?', r'\d+ eur[o]?', r'maximum \d+']:
+        search_terms = re.sub(pattern, '', search_terms)
+    # Remove distance patterns
+    search_terms = re.sub(r'\d+\s*km', '', search_terms)
+    # Remove common phrases
+    for phrase in ['find me', 'looking for', 'zoek', 'van me', 'from me', 'in de buurt']:
+        search_terms = search_terms.replace(phrase, '')
+    
+    # Clean up search terms
+    search_terms = ' '.join(search_terms.split())
+    if not search_terms:
+        search_terms = query
+    
+    return {
+        "search_terms": search_terms,
+        "max_price_eur": max_price,
+        "min_price_eur": None,  # Not implemented in this simple parser
+        "location": location,
+        "radius_km": radius_km,
+        "item_type": item_type,
+        "style": style
+    }
+
+@app.post("/smart-search")
+def smart_search(request: SmartSearchRequest):
+    """Smart search using natural language processing"""
+    try:
+        # Parse the natural language query
+        parsed_query = parse_natural_language_query(request.query)
+        logger.info(f"Parsed query: {parsed_query}")
+        
+        # Use the extracted search terms for Marktplaats search
+        search_terms = parsed_query.get("search_terms", request.query)
+        
+        # Perform the search using existing scrape function logic
+        seen = set()
+        items: List[dict] = []
+        pages = 2  # Search first 2 pages for MVP
+        
+        for p in range(1, pages + 1):
+            url = f"{BASE}/q/{search_terms}/?p={p}"
+            r = requests.get(url, headers=HEADERS, timeout=20)
+            r.raise_for_status()
+
+            soup = BeautifulSoup(r.text, "lxml")
+            cards = soup.select(SEL["card"])
+            logger.info(f"Found {len(cards)} cards on page {p} for search terms '{search_terms}'")
+            
+            if len(cards) == 0:
+                alt_selectors = ["li[data-testid='listing-item']", "article[data-testid='listing']", ".hz-Listing", ".mp-listing-item", "li.mp-Listing-item"]
+                for alt_sel in alt_selectors:
+                    cards = soup.select(alt_sel)
+                    if len(cards) > 0:
+                        logger.info(f"Using alternative selector '{alt_sel}' - found {len(cards)} cards")
+                        break
+            
+            for c in cards:
+                a = c.select_one(SEL["link"])
+                if not a:
+                    continue
+                href = a.get("href", "")
+                if not href or not isinstance(href, str):
+                    continue
+                full_url = href if href.startswith("http") else urljoin(BASE, href)
+                lid = extract_id(full_url)
+                if lid in seen:
+                    continue
+                seen.add(lid)
+
+                # Extract item details with multiple fallback selectors
+                title_el = c.select_one(SEL["title"]) or c.select_one(".hz-Listing-title") or c.select_one("h3") or c.select_one("[data-testid*='title']")
+                price_el = c.select_one(SEL["price"]) or c.select_one(".hz-Listing-price") or c.select_one("[data-testid*='price']")
+                loc_el = c.select_one(SEL["location"]) or c.select_one(".hz-Listing-location") or c.select_one("[data-testid*='location']")
+                date_el = c.select_one(SEL["date"]) or c.select_one(".hz-Listing-date") or c.select_one("[data-testid*='date']")
+                img_el = c.select_one(SEL["image"]) or c.select_one("img")
+                desc_el = c.select_one(SEL["desc"]) or c.select_one(".hz-Listing-description") or c.select_one("[data-testid*='desc']")
+
+                item = {
+                    "id": lid,
+                    "url": full_url,
+                    "title": title_el.get_text(strip=True) if title_el else "",
+                    "price_text": price_el.get_text(strip=True) if price_el else None,
+                    "price_eur": parse_price(price_el.get_text(strip=True)) if price_el else None,
+                    "location": loc_el.get_text(strip=True) if loc_el else None,
+                    "posted_at": date_el.get_text(strip=True) if date_el else None,
+                    "image_url": img_el.get("src") if img_el and img_el.has_attr("src") else None,
+                    "description": desc_el.get_text(strip=True) if desc_el else None,
+                }
+                items.append(item)
+
+        # Filter results based on parsed parameters
+        filtered_items = items
+        
+        # Filter by max price if specified
+        if parsed_query.get("max_price_eur"):
+            max_price = parsed_query["max_price_eur"]
+            filtered_items = [item for item in filtered_items 
+                            if item["price_eur"] is None or item["price_eur"] <= max_price]
+        
+        # Filter by min price if specified
+        if parsed_query.get("min_price_eur"):
+            min_price = parsed_query["min_price_eur"]
+            filtered_items = [item for item in filtered_items 
+                            if item["price_eur"] is not None and item["price_eur"] >= min_price]
+        
+        # Sort by price (priced items first, lowest first)
+        filtered_items.sort(key=lambda x: (x["price_eur"] is None, x["price_eur"] if x["price_eur"] is not None else 1e12))
+        
+        return {
+            "query": request.query,
+            "parsed_parameters": parsed_query,
+            "search_terms": search_terms,
+            "total_found": len(items),
+            "results_after_filtering": len(filtered_items),
+            "results": filtered_items[:20]  # Limit to 20 results for MVP
+        }
+        
+    except Exception as e:
+        logger.error(f"Smart search failed: {e}")
+        return {"error": "An error occurred during smart search", "details": str(e)}
 
 @app.get("/health")
 def health_check():

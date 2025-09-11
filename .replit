@@ -3,7 +3,7 @@ modules = ["python-3.11"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["geckodriver", "gitFull", "glibcLocales", "playwright-driver", "xcodebuild", "zlib", "jq"]
+packages = ["geckodriver", "gitFull", "glibcLocales", "jq", "playwright-driver", "xcodebuild", "zlib"]
 
 [unitTest]
 language = "python3"
@@ -18,6 +18,10 @@ deploymentTarget = "cloudrun"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 33605
+externalPort = 3000
 
 [workflows]
 runButton = "Project"
@@ -54,3 +58,4 @@ waitForPort = 5000
 
 [agent]
 expertMode = true
+integrations = ["python_openai:1.0.0"]
