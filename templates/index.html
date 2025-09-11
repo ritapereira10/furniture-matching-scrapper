@@ -130,6 +130,36 @@
             color: #7a9b8e;
         }
         
+        .loading-animation {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .loading-spinner {
+            font-size: 2rem;
+            animation: spin 2s linear infinite;
+        }
+        
+        .loading-message {
+            font-size: 1.1rem;
+            color: #d2825b;
+            font-weight: 500;
+            text-align: center;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
         .results {
             display: none;
             margin-top: 30px;
@@ -193,6 +223,67 @@
             background: #c67654;
         }
         
+        .results-header {
+            text-align: center;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .results-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        .results-headline {
+            font-size: 1.8rem;
+            color: #d2825b;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .results-subtitle {
+            color: #7a9b8e;
+            font-style: italic;
+            font-size: 1rem;
+        }
+        
+        .category-section {
+            margin-bottom: 40px;
+        }
+        
+        .category-title {
+            font-size: 1.4rem;
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-left: 10px;
+            border-left: 4px solid #d2825b;
+        }
+        
+        .category-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .result-content {
+            flex: 1;
+        }
+        
+        .ai-commentary {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin: 10px 0;
+            color: #7a9b8e;
+            font-style: italic;
+            font-size: 0.9rem;
+            border-left: 3px solid #d2825b;
+        }
+        
         .error {
             color: #e74c3c;
             margin-top: 15px;
@@ -219,16 +310,16 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="title">Perfect Pieces</h1>
+        <h1 class="title">✨ Style Genie</h1>
         <p class="subtitle">
-            Share your dream furniture ideas and discover beautiful second-hand pieces that match your style in the Netherlands
+            Your personal AI interior designer who finds magical second-hand treasures perfectly matched to your unique style ✨
         </p>
         
         <div class="search-section">
-            <div class="search-icon">📌</div>
-            <h2 class="search-title">Discover Your Dream Furniture</h2>
+            <div class="search-icon">🏠</div>
+            <h2 class="search-title">Tell Me About Your Dream Space</h2>
             <p class="search-description">
-                Tell us what you're looking for and we'll find beautiful second-hand pieces that match your style
+                Whisper your furniture dreams to me, and I'll discover hidden gems that speak to your soul ✨
             </p>
             
             <input 
@@ -240,11 +331,14 @@
             >
             
             <button class="search-button" id="searchButton" onclick="searchItems()">
-                ✨ Find My Perfect Pieces
+                ✨ Summon My Perfect Pieces
             </button>
             
             <div class="loading" id="loading">
-                Searching Marktplaats for your perfect pieces...
+                <div class="loading-animation">
+                    <div class="loading-spinner">✨</div>
+                    <div class="loading-message" id="loadingMessage">Building your room profile...</div>
+                </div>
             </div>
             
             <div class="error" id="error"></div>
@@ -254,10 +348,24 @@
     </div>
 
     <script>
+        const magicalMessages = [
+            "Building your room profile...",
+            "Reading your style essence...", 
+            "Finding perfect pieces for your cozy corner...",
+            "Matching your vibe with hidden gems...",
+            "Discovering treasures that speak to your soul...",
+            "Curating a collection just for you...",
+            "Hunting through Dutch vintage gold...",
+            "Weaving magic into your search..."
+        ];
+        
+        let messageIndex = 0;
+        let messageInterval;
+
         async function searchItems() {
             const query = document.getElementById('searchInput').value.trim();
             if (!query) {
-                showError('Please enter what you\'re looking for!');
+                showError('Tell me your furniture dreams first! ✨');
                 return;
             }
             
@@ -265,13 +373,22 @@
             const loading = document.getElementById('loading');
             const results = document.getElementById('results');
             const error = document.getElementById('error');
+            const loadingMessage = document.getElementById('loadingMessage');
             
-            // Show loading state
+            // Show magical loading state
             searchButton.disabled = true;
-            searchButton.textContent = 'Searching...';
+            searchButton.textContent = '✨ Casting magic...';
             loading.style.display = 'block';
             results.style.display = 'none';
             error.style.display = 'none';
+            
+            // Start rotating magical messages
+            messageIndex = 0;
+            loadingMessage.textContent = magicalMessages[messageIndex];
+            messageInterval = setInterval(() => {
+                messageIndex = (messageIndex + 1) % magicalMessages.length;
+                loadingMessage.textContent = magicalMessages[messageIndex];
+            }, 1500);
             
             try {
                 const response = await fetch('/smart-search', {
@@ -293,44 +410,210 @@
                 console.error('Search error:', err);
                 showError('Sorry, something went wrong with the search. Please try again!');
             } finally {
-                // Reset button state
+                // Stop magical messages and reset button state
+                clearInterval(messageInterval);
                 searchButton.disabled = false;
-                searchButton.textContent = '✨ Find My Perfect Pieces';
+                searchButton.textContent = '✨ Summon My Perfect Pieces';
                 loading.style.display = 'none';
             }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
         
         function displayResults(items, searchTerms) {
             const resultsDiv = document.getElementById('results');
             
             if (!items || items.length === 0) {
-                resultsDiv.innerHTML = `
-                    <div style="text-align: center; padding: 20px; color: #7a9b8e;">
-                        <p>No items found for "${searchTerms}". Try adjusting your search!</p>
-                    </div>
+                const emptyDiv = document.createElement('div');
+                emptyDiv.style.cssText = 'text-align: center; padding: 40px; color: #7a9b8e; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);';
+                emptyDiv.innerHTML = `
+                    <div style="font-size: 3rem; margin-bottom: 15px;">🔮</div>
+                    <h3 style="color: #d2825b; margin-bottom: 10px;">The crystal ball is cloudy...</h3>
+                    <p>I couldn't find any treasures matching "${escapeHtml(searchTerms)}". Try describing your dreams differently! ✨</p>
                 `;
+                resultsDiv.innerHTML = '';
+                resultsDiv.appendChild(emptyDiv);
                 resultsDiv.style.display = 'block';
                 return;
             }
             
-            const resultsHTML = items.map(item => `
-                <div class="result-item">
-                    ${item.image_url ? `<img src="${item.image_url}" alt="${item.title}" class="result-image" onerror="this.style.display='none'">` : ''}
-                    <div>
-                        <div class="result-title">${item.title}</div>
-                        <div class="result-price">${item.price_text}</div>
-                        <div class="result-location">${item.location}</div>
-                        <a href="${item.url}" target="_blank" class="result-link">View on Marktplaats</a>
-                    </div>
-                    <div style="clear: both;"></div>
-                </div>
-            `).join('');
+            // Generate personalized commentary
+            const styleWords = getStyleInsights(searchTerms);
+            const personalizedHeadline = generatePersonalizedHeadline(items.length, searchTerms, styleWords);
             
-            resultsDiv.innerHTML = `
-                <h3 style="margin-bottom: 20px; color: #2c3e50;">Found ${items.length} perfect pieces for "${searchTerms}":</h3>
-                ${resultsHTML}
-            `;
+            // Group items for better presentation
+            const groupedItems = groupItemsByType(items);
+            
+            // Create results safely to prevent XSS
+            const resultsContainer = document.createElement('div');
+            
+            Object.entries(groupedItems).forEach(([category, categoryItems]) => {
+                const categorySection = document.createElement('div');
+                categorySection.className = 'category-section';
+                
+                const categoryTitle = document.createElement('h4');
+                categoryTitle.className = 'category-title';
+                categoryTitle.textContent = category;
+                categorySection.appendChild(categoryTitle);
+                
+                const categoryItemsDiv = document.createElement('div');
+                categoryItemsDiv.className = 'category-items';
+                
+                categoryItems.forEach(item => {
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'result-item';
+                    
+                    // Create image if available
+                    if (item.image_url) {
+                        const img = document.createElement('img');
+                        img.src = item.image_url;
+                        img.alt = item.title || 'Product image';
+                        img.className = 'result-image';
+                        img.onerror = function() { this.style.display = 'none'; };
+                        resultItem.appendChild(img);
+                    }
+                    
+                    const resultContent = document.createElement('div');
+                    resultContent.className = 'result-content';
+                    
+                    const title = document.createElement('div');
+                    title.className = 'result-title';
+                    title.textContent = item.title || 'Vintage Find';
+                    
+                    const price = document.createElement('div');
+                    price.className = 'result-price';
+                    price.textContent = item.price_text || 'Price on request';
+                    
+                    const location = document.createElement('div');
+                    location.className = 'result-location';
+                    location.textContent = `📍 ${item.location || 'Netherlands'}`;
+                    
+                    const commentary = document.createElement('div');
+                    commentary.className = 'ai-commentary';
+                    commentary.textContent = generateItemCommentary(item, styleWords);
+                    
+                    const link = document.createElement('a');
+                    link.href = item.url || '#';
+                    link.target = '_blank';
+                    link.className = 'result-link';
+                    link.textContent = '✨ Claim This Treasure';
+                    
+                    resultContent.appendChild(title);
+                    resultContent.appendChild(price);
+                    resultContent.appendChild(location);
+                    resultContent.appendChild(commentary);
+                    resultContent.appendChild(link);
+                    
+                    resultItem.appendChild(resultContent);
+                    
+                    const clearDiv = document.createElement('div');
+                    clearDiv.style.clear = 'both';
+                    resultItem.appendChild(clearDiv);
+                    
+                    categoryItemsDiv.appendChild(resultItem);
+                });
+                
+                categorySection.appendChild(categoryItemsDiv);
+                resultsContainer.appendChild(categorySection);
+            });
+            
+            const resultsHTML = resultsContainer.innerHTML;
+            
+            // Create secure results header
+            const resultsHeader = document.createElement('div');
+            resultsHeader.className = 'results-header';
+            
+            const resultsIcon = document.createElement('div');
+            resultsIcon.className = 'results-icon';
+            resultsIcon.textContent = '✨';
+            
+            const headline = document.createElement('h3');
+            headline.className = 'results-headline';
+            headline.textContent = personalizedHeadline;
+            
+            const subtitle = document.createElement('p');
+            subtitle.className = 'results-subtitle';
+            subtitle.textContent = 'Curated especially for your unique style essence';
+            
+            resultsHeader.appendChild(resultsIcon);
+            resultsHeader.appendChild(headline);
+            resultsHeader.appendChild(subtitle);
+            
+            // Clear and populate results
+            resultsDiv.innerHTML = '';
+            resultsDiv.appendChild(resultsHeader);
+            resultsDiv.appendChild(resultsContainer);
             resultsDiv.style.display = 'block';
+        }
+        
+        function getStyleInsights(searchTerms) {
+            const lower = searchTerms.toLowerCase();
+            const insights = {
+                era: null,
+                mood: null,
+                material: null,
+                color: null
+            };
+            
+            if (lower.includes('vintage') || lower.includes('retro')) insights.era = 'vintage';
+            if (lower.includes('modern') || lower.includes('contemporary')) insights.era = 'modern';
+            if (lower.includes('warm') || lower.includes('cozy')) insights.mood = 'warm';
+            if (lower.includes('wood') || lower.includes('oak')) insights.material = 'wood';
+            if (lower.includes('leather')) insights.material = 'leather';
+            if (lower.includes('mid-century')) insights.era = 'mid-century';
+            
+            return insights;
+        }
+        
+        function generatePersonalizedHeadline(count, searchTerms, styleWords) {
+            const templates = [
+                `We found ${count} magical pieces for your ${styleWords.era || 'dreamy'} space`,
+                `✨ ${count} treasures discovered for your ${styleWords.mood || 'beautiful'} sanctuary`,
+                `Your personal collection: ${count} perfect ${styleWords.era || 'vintage'} finds`,
+                `${count} gems that speak your design language`
+            ];
+            
+            return templates[Math.floor(Math.random() * templates.length)];
+        }
+        
+        function groupItemsByType(items) {
+            const groups = {};
+            
+            items.forEach(item => {
+                const title = item.title.toLowerCase();
+                let category = 'Beautiful Finds';
+                
+                if (title.includes('stoel') || title.includes('chair')) {
+                    category = 'Chairs That Match Your Soul ✨';
+                } else if (title.includes('tafel') || title.includes('table')) {
+                    category = 'Tables for Your Perfect Gatherings 🌟';
+                } else if (title.includes('lamp') || title.includes('light')) {
+                    category = 'Lighting to Set Your Mood 💫';
+                } else if (title.includes('kast') || title.includes('cabinet')) {
+                    category = 'Storage with Vintage Charm 📚';
+                }
+                
+                if (!groups[category]) groups[category] = [];
+                groups[category].push(item);
+            });
+            
+            return groups;
+        }
+        
+        function generateItemCommentary(item, styleWords) {
+            const commentaries = [
+                "This piece has that perfect vintage soul you're seeking ✨",
+                "The character in this find speaks to your design aesthetic 🌟",
+                "This treasure has the warmth your space is calling for 💫",
+                "I sense this piece completing your vision beautifully ✨",
+                "The energy of this find aligns with your style dreams 🌙"
+            ];
+            
+            return commentaries[Math.floor(Math.random() * commentaries.length)];
         }
         
         function showError(message) {
