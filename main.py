@@ -655,7 +655,7 @@ def get_style_collection(request: StyleCollectionRequest):
                                 "title": title_el.get_text(strip=True) if title_el else "",
                                 "price_text": price_el.get_text(strip=True) if price_el else "",
                                 "location": loc_el.get_text(strip=True) if loc_el else "",
-                                "image_url": img_el.get("src") or img_el.get("data-src") or (img_el.get("srcset") or "").split()[0] if (img_el and (img_el.get("srcset") or "").split()) else img_el.get("src") if img_el else None,
+                                "image_url": img_el.get("src") or img_el.get("data-src") if img_el else None,
                                 "style_match": style_term,
                                 "furniture_type": furniture_type
                             }
