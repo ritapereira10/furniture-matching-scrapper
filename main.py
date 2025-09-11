@@ -286,8 +286,76 @@ def batch_search(request: BatchSearchRequest):
         return {"error": "An error occurred during batch search", "details": str(e)}
 
 def parse_natural_language_query(query: str) -> dict:
-    """Parse natural language search query to extract search parameters"""
-    # Simple regex-based parsing for MVP
+    """Parse natural language search query with English-Dutch translation for maximum results"""
+    
+    # Comprehensive English-Dutch translation mappings
+    furniture_translations = {
+        'chair': ['stoel', 'stoelen'],
+        'armchair': ['fauteuil', 'fauteuils'],
+        'sofa': ['bank', 'banken'],
+        'couch': ['bank', 'banken'],
+        'sideboard': ['dressoir', 'dressoirs'],
+        'cabinet': ['kast', 'kasten'],
+        'table': ['tafel', 'tafels'],
+        'dining table': ['eettafel', 'eettafels'],
+        'coffee table': ['salontafel', 'salontafels'],
+        'end table': ['bijzettafel', 'bijzettafels'],
+        'side table': ['bijzettafel', 'bijzettafels'],
+        'lamp': ['lamp', 'lampen'],
+        'floor lamp': ['vloerlamp', 'vloerlampen'],
+        'pendant lamp': ['hanglamp', 'hanglampen'],
+        'mirror': ['spiegel', 'spiegels'],
+        'stool': ['kruk', 'krukken'],
+        'desk': ['bureau', 'bureaus'],
+        'shelf': ['plank', 'planken'],
+        'bookshelf': ['boekenkast', 'boekenkasten'],
+        'painting': ['schilderij', 'schilderijen'],
+        'artwork': ['kunstwerk', 'kunstwerken'],
+        'rug': ['vloerkleed', 'vloerkleden', 'tapijt', 'tapijten']
+    }
+    
+    style_translations = {
+        'mid century': ['mid century', 'mcm', 'jaren 60', 'teak', 'palissander', 'vintage'],
+        'scandi': ['scandinavisch', 'scandi', 'minimalistisch', 'licht hout', 'beige'],
+        'scandinavian': ['scandinavisch', 'scandi', 'minimalistisch', 'licht hout', 'beige'],
+        'japandi': ['japandi', 'eiken', 'licht hout', 'minimalistisch'],
+        'industrial': ['industrieel', 'metaal', 'staal', 'hout en metaal'],
+        'vintage': ['vintage', 'retro', 'oude'],
+        'boho': ['boho', 'rotan', 'riet', 'bamboe'],
+        'modern': ['modern', 'hedendaags', 'eigentijds'],
+        'antique': ['antiek', 'antieke', 'oude'],
+        'minimalist': ['minimalistisch', 'minimaal', 'simpel'],
+        'rustic': ['rustiek', 'landelijk', 'boerenhuisstijl']
+    }
+    
+    color_translations = {
+        'red': ['rood', 'rode'],
+        'blue': ['blauw', 'blauwe'],
+        'green': ['groen', 'groene'],
+        'yellow': ['geel', 'gele'],
+        'orange': ['oranje'],
+        'purple': ['paars', 'paarse'],
+        'pink': ['roze'],
+        'black': ['zwart', 'zwarte'],
+        'white': ['wit', 'witte'],
+        'grey': ['grijs', 'grijze'],
+        'gray': ['grijs', 'grijze'],
+        'brown': ['bruin', 'bruine'],
+        'beige': ['beige'],
+        'cream': ['crème', 'creme'],
+        'gold': ['goud', 'gouden'],
+        'silver': ['zilver', 'zilveren'],
+        'bronze': ['brons', 'bronzen'],
+        'copper': ['koper', 'koperen'],
+        'ivory': ['ivoor', 'ivoren'],
+        'teal': ['turquoise'],
+        'burgundy': ['bordeaux'],
+        'mustard': ['mosterd', 'mosterdgeel'],
+        'terracotta': ['terracotta'],
+        'olive': ['olijf', 'olijfgroen']
+    }
+    
+    # Parse basic parameters
     query_lower = query.lower()
     
     # Extract max price
@@ -320,64 +388,65 @@ def parse_natural_language_query(query: str) -> dict:
     if km_match:
         radius_km = int(km_match.group(1))
     
-    # Extract style
-    style = None
-    styles = ['vintage', 'retro', 'modern', 'antiek', 'design', 'industrieel', 'scandinavisch']
-    for s in styles:
-        if s in query_lower:
-            style = s
-            break
+    # Enhanced search term building with translations
+    search_terms_set = set()
     
-    # Extract item type and convert to Dutch
-    item_type = None
-    item_translations = {
-        'chair': 'stoel',
-        'table': 'tafel',
-        'desk': 'bureau',
-        'sofa': 'bank',
-        'lamp': 'lamp',
-        'cabinet': 'kast',
-        'shelf': 'plank'
-    }
-    
-    # Check for Dutch terms first
-    dutch_items = ['stoel', 'tafel', 'bureau', 'bank', 'lamp', 'kast', 'plank', 'dressoir', 'kledingkast']
-    for item in dutch_items:
-        if item in query_lower:
-            item_type = item
-            break
-    
-    # Check for English terms and translate
-    if not item_type:
-        for eng, dutch in item_translations.items():
-            if eng in query_lower:
-                item_type = dutch
-                break
-    
-    # Create search terms by removing price and location info
-    search_terms = query_lower
+    # Start with original query words (cleaned)
+    cleaned_query = query_lower
     # Remove price patterns
     for pattern in [r'max \d+ eur[o]?', r'onder \d+ eur[o]?', r'tot \d+ eur[o]?', r'\d+ eur[o]?', r'maximum \d+']:
-        search_terms = re.sub(pattern, '', search_terms)
+        cleaned_query = re.sub(pattern, '', cleaned_query)
     # Remove distance patterns
-    search_terms = re.sub(r'\d+\s*km', '', search_terms)
+    cleaned_query = re.sub(r'\d+\s*km', '', cleaned_query)
     # Remove common phrases
     for phrase in ['find me', 'looking for', 'zoek', 'van me', 'from me', 'in de buurt']:
-        search_terms = search_terms.replace(phrase, '')
+        cleaned_query = cleaned_query.replace(phrase, '')
     
-    # Clean up search terms
-    search_terms = ' '.join(search_terms.split())
+    # Add original terms
+    original_words = cleaned_query.split()
+    search_terms_set.update(original_words)
+    
+    # Add furniture translations
+    for english_term, dutch_terms in furniture_translations.items():
+        if english_term in query_lower:
+            search_terms_set.update(dutch_terms)
+    
+    # Add style translations
+    detected_style = None
+    for english_style, dutch_terms in style_translations.items():
+        if english_style in query_lower:
+            search_terms_set.update(dutch_terms)
+            detected_style = english_style
+            break
+    
+    # Add color translations
+    for english_color, dutch_terms in color_translations.items():
+        if english_color in query_lower:
+            search_terms_set.update(dutch_terms)
+    
+    # Detect item type
+    item_type = None
+    for english_item, dutch_terms in furniture_translations.items():
+        if english_item in query_lower:
+            item_type = dutch_terms[0]  # Use first Dutch term as primary
+            break
+    
+    # Remove empty strings and clean up
+    search_terms_set = {term.strip() for term in search_terms_set if term.strip()}
+    
+    # Create final search string
+    search_terms = ' '.join(search_terms_set)
     if not search_terms:
         search_terms = query
     
     return {
         "search_terms": search_terms,
         "max_price_eur": max_price,
-        "min_price_eur": None,  # Not implemented in this simple parser
+        "min_price_eur": None,
         "location": location,
         "radius_km": radius_km,
         "item_type": item_type,
-        "style": style
+        "style": detected_style
     }
 
 @app.post("/smart-search")
