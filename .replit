@@ -12,15 +12,15 @@ language = "python3"
 requiredFiles = [".replit", "replit.nix"]
 
 [deployment]
-run = ["uvicorn", "main:app", "--host=0.0.0.0", "--port=8000"]
-deploymentTarget = "cloudrun"
+deploymentTarget = "static"
+publicDir = "test"
 
 [[ports]]
 localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 33835
+localPort = 33245
 externalPort = 3000
 
 [workflows]

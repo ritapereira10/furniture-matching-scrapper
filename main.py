@@ -196,6 +196,9 @@ class BatchSearchRequest(BaseModel):
 class SmartSearchRequest(BaseModel):
     query: str
 
+class StyleCollectionRequest(BaseModel):
+    style: str
+
 @app.post("/batch-search")
 def batch_search(request: BatchSearchRequest):
     """
@@ -546,6 +549,140 @@ def smart_search(request: SmartSearchRequest):
     except Exception as e:
         logger.error(f"Smart search failed: {e}")
         return {"error": "An error occurred during smart search", "details": str(e)}
+
+@app.post("/style-collection")
+def get_style_collection(request: StyleCollectionRequest):
+    """Get a curated collection of furniture for a specific style"""
+    try:
+        # Define style search patterns that actually work
+        style_patterns = {
+            'mid century': {
+                'search_terms': ['teak', 'mcm', 'jaren 60'],
+                'furniture_types': {
+                    'chairs': ['stoel', 'fauteuil'], 
+                    'tables': ['tafel', 'salontafel'],
+                    'storage': ['kast', 'dressoir'],
+                    'lighting': ['lamp']
+                }
+            },
+            'vintage': {
+                'search_terms': ['vintage', 'retro'],
+                'furniture_types': {
+                    'chairs': ['stoel', 'fauteuil'], 
+                    'tables': ['tafel'],
+                    'storage': ['kast'],
+                    'lighting': ['lamp'],
+                    'decor': ['spiegel', 'schilderij']
+                }
+            },
+            'industrial': {
+                'search_terms': ['industrieel', 'metaal'], 
+                'furniture_types': {
+                    'chairs': ['stoel'],
+                    'tables': ['tafel'],
+                    'storage': ['kast'],
+                    'lighting': ['lamp']
+                }
+            },
+            'scandi': {
+                'search_terms': ['licht hout', 'beige'],
+                'furniture_types': {
+                    'chairs': ['stoel'],
+                    'tables': ['tafel', 'eettafel'],
+                    'storage': ['kast'],
+                    'lighting': ['lamp']
+                }
+            }
+        }
+        
+        style_key = request.style.lower()
+        if style_key not in style_patterns:
+            return {"error": f"Style '{request.style}' not supported", "available_styles": list(style_patterns.keys())}
+        
+        pattern = style_patterns[style_key]
+        collection = {}
+        
+        # Search for each furniture type with each style term
+        for category, furniture_types in pattern['furniture_types'].items():
+            category_items = []
+            seen_ids = set()
+            
+            for style_term in pattern['search_terms']:
+                for furniture_type in furniture_types:
+                    search_query = f"{style_term} {furniture_type}"
+                    
+                    # Use simplified search logic
+                    try:
+                        url = f"{BASE}/q/{search_query}/?p=1"
+                        r = requests.get(url, headers=HEADERS, timeout=20)
+                        r.raise_for_status()
+                        
+                        soup = BeautifulSoup(r.text, "lxml")
+                        cards = soup.select(SEL["card"])
+                        
+                        if len(cards) == 0:
+                            # Try alternative selectors
+                            alt_selectors = ["li[data-testid='listing-item']", "article[data-testid='listing']", ".hz-Listing"]
+                            for alt_sel in alt_selectors:
+                                cards = soup.select(alt_sel)
+                                if len(cards) > 0:
+                                    break
+                        
+                        # Process results (limit to 3 per search to avoid overwhelming)
+                        for c in cards[:3]:
+                            a = c.select_one(SEL["link"])
+                            if not a:
+                                continue
+                            href = a.get("href", "")
+                            if not href or not isinstance(href, str):
+                                continue
+                            full_url = href if href.startswith("http") else urljoin(BASE, href)
+                            lid = extract_id(full_url)
+                            
+                            if lid in seen_ids:
+                                continue
+                            seen_ids.add(lid)
+                            
+                            # Extract item details
+                            title_el = c.select_one(SEL["title"]) or c.select_one(".hz-Listing-title") or c.select_one("h3")
+                            price_el = c.select_one(SEL["price"]) or c.select_one(".hz-Listing-price")
+                            loc_el = c.select_one(SEL["location"]) or c.select_one(".hz-Listing-location")
+                            img_el = c.select_one(SEL["image"]) or c.select_one("img")
+                            
+                            item = {
+                                "id": lid,
+                                "url": full_url,
+                                "title": title_el.get_text(strip=True) if title_el else "",
+                                "price_text": price_el.get_text(strip=True) if price_el else "",
+                                "location": loc_el.get_text(strip=True) if loc_el else "",
+                                "image_url": img_el.get("src") or img_el.get("data-src") or (img_el.get("srcset") or "").split()[0] if (img_el and (img_el.get("srcset") or "").split()) else img_el.get("src") if img_el else None,
+                                "style_match": style_term,
+                                "furniture_type": furniture_type
+                            }
+                            
+                            # Parse price for filtering
+                            item["price_eur"] = parse_price(item["price_text"])
+                            
+                            category_items.append(item)
+                            
+                    except Exception as search_error:
+                        logger.warning(f"Search failed for '{search_query}': {search_error}")
+                        continue
+            
+            if category_items:
+                # Sort by price (lowest first, null prices last)
+                category_items.sort(key=lambda x: (x["price_eur"] is None, x["price_eur"] if x["price_eur"] is not None else 1e12))
+                collection[category] = category_items[:6]  # Limit to 6 items per category
+        
+        return {
+            "style": request.style,
+            "total_categories": len(collection),
+            "collection": collection
+        }
+        
+    except Exception as e:
+        logger.error(f"Style collection failed: {e}")
+        return {"error": "An error occurred while building style collection", "details": str(e)}
 
 @app.get("/health")
 def health_check():
