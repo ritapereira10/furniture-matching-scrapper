@@ -1,6 +1,6 @@
 # Overview
 
-This is a FastAPI-based web scraper designed to extract data from Marktplaats (Dutch marketplace platform) for Pinterest board matching. The application provides a REST API interface for searching Marktplaats listings and retrieving structured marketplace data including titles, prices, locations, and links. The scraper is fully functional and optimized for batch processing to match Pinterest board items with available Marktplaats listings.
+This is a magical Pinterest board to Marktplaats matching system that combines AI interior design personality with intelligent furniture search. The "Style Genie" provides a personalized, enchanting experience that analyzes natural language queries, searches Marktplaats for matching furniture, and presents results with AI commentary in a beautiful, anticipation-building interface. The system transforms utilitarian marketplace search into a magical, personal experience like "Spotify Wrapped for furniture."
 
 # User Preferences
 

@@ -424,6 +424,16 @@
             return div.innerHTML;
         }
         
+        function safeUrl(url) {
+            if (!url) return '#';
+            try {
+                const urlObj = new URL(url, window.location.origin);
+                return (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') ? urlObj.href : '#';
+            } catch {
+                return '#';
+            }
+        }
+        
         function displayResults(items, searchTerms) {
             const resultsDiv = document.getElementById('results');
             
@@ -467,10 +477,10 @@
                     const resultItem = document.createElement('div');
                     resultItem.className = 'result-item';
                     
-                    // Create image if available
-                    if (item.image_url) {
+                    // Create image if available and safe
+                    if (item.image_url && safeUrl(item.image_url) !== '#') {
                         const img = document.createElement('img');
-                        img.src = item.image_url;
+                        img.src = safeUrl(item.image_url);
                         img.alt = item.title || 'Product image';
                         img.className = 'result-image';
                         img.onerror = function() { this.style.display = 'none'; };
@@ -497,8 +507,9 @@
                     commentary.textContent = generateItemCommentary(item, styleWords);
                     
                     const link = document.createElement('a');
-                    link.href = item.url || '#';
+                    link.href = safeUrl(item.url);
                     link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
                     link.className = 'result-link';
                     link.textContent = '✨ Claim This Treasure';
                     
@@ -584,7 +595,7 @@
             const groups = {};
             
             items.forEach(item => {
-                const title = item.title.toLowerCase();
+                const title = (item.title || '').toLowerCase();
                 let category = 'Beautiful Finds';
                 
                 if (title.includes('stoel') || title.includes('chair')) {
