@@ -12,82 +12,92 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #fefefe;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
-        }
-        
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
-            max-width: 600px;
-            width: 100%;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        
-        .title {
-            font-size: 3.5rem;
-            font-weight: 700;
-            color: #d2825b;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        
-        .subtitle {
-            font-size: 1.1rem;
-            color: #7a9b8e;
-            margin-bottom: 40px;
+            color: #1a1a1a;
             line-height: 1.6;
         }
         
+        .container {
+            background: #ffffff;
+            border-radius: 2px;
+            padding: 60px 40px;
+            max-width: 720px;
+            width: 100%;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+            text-align: center;
+            border: 1px solid #f0f0f0;
+        }
+        
+        .title {
+            font-size: 4rem;
+            font-weight: 300;
+            color: #1a1a1a;
+            margin-bottom: 15px;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 50px;
+            line-height: 1.5;
+            font-weight: 300;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
         .search-section {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+            background: #fafafa;
+            border-radius: 1px;
+            padding: 40px;
+            border: 1px solid #f0f0f0;
+            margin-bottom: 30px;
         }
         
         .search-icon {
-            font-size: 2rem;
-            color: #d2825b;
-            margin-bottom: 20px;
+            font-size: 1.5rem;
+            color: #1a1a1a;
+            margin-bottom: 25px;
         }
         
         .search-title {
-            font-size: 1.8rem;
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 10px;
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: #1a1a1a;
+            margin-bottom: 15px;
+            letter-spacing: -0.01em;
         }
         
         .search-description {
-            color: #7a9b8e;
-            margin-bottom: 25px;
-            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1rem;
+            line-height: 1.5;
         }
         
         .search-input {
             width: 100%;
-            padding: 15px 20px;
-            border: 2px solid #e8ecef;
-            border-radius: 10px;
+            padding: 18px 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 1px;
             font-size: 1rem;
-            margin-bottom: 20px;
-            transition: border-color 0.3s ease;
-            background: #f8f9fa;
+            margin-bottom: 25px;
+            transition: border-color 0.2s ease;
+            background: white;
+            font-family: inherit;
         }
         
         .search-input:focus {
             outline: none;
-            border-color: #d2825b;
+            border-color: #1a1a1a;
             background: white;
         }
         
@@ -96,22 +106,23 @@
         }
         
         .search-button {
-            background: linear-gradient(135deg, #d2825b 0%, #c67654 100%);
+            background: #1a1a1a;
             color: white;
             border: none;
-            padding: 15px 40px;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
+            padding: 18px 45px;
+            border-radius: 1px;
+            font-size: 0.95rem;
+            font-weight: 400;
             cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: background 0.2s ease;
             width: 100%;
-            max-width: 300px;
+            max-width: 350px;
+            letter-spacing: 0.02em;
+            font-family: inherit;
         }
         
         .search-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(210, 130, 91, 0.3);
+            background: #333;
         }
         
         .search-button:active {
@@ -121,7 +132,6 @@
         .search-button:disabled {
             background: #ccc;
             cursor: not-allowed;
-            transform: none;
         }
         
         .loading {
@@ -168,16 +178,15 @@
         
         .result-item {
             background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            transition: transform 0.2s ease;
+            border-radius: 1px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid #f0f0f0;
+            transition: border-color 0.2s ease;
         }
         
         .result-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+            border-color: #e0e0e0;
         }
         
         .result-image {
@@ -190,46 +199,51 @@
         }
         
         .result-title {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 5px;
+            font-weight: 400;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+            line-height: 1.4;
         }
         
         .result-price {
-            color: #d2825b;
-            font-weight: 600;
+            color: #1a1a1a;
+            font-weight: 500;
             font-size: 1.1rem;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
         
         .result-location {
-            color: #7a9b8e;
+            color: #666;
             font-size: 0.9rem;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            font-weight: 300;
         }
         
         .result-link {
-            background: #d2825b;
+            background: #1a1a1a;
             color: white;
             text-decoration: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            font-size: 0.9rem;
+            padding: 10px 20px;
+            border-radius: 1px;
+            font-size: 0.85rem;
             display: inline-block;
             transition: background 0.2s ease;
+            font-weight: 400;
+            letter-spacing: 0.02em;
         }
         
         .result-link:hover {
-            background: #c67654;
+            background: #333;
         }
         
         .results-header {
             text-align: center;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            background: #fafafa;
+            border-radius: 1px;
+            padding: 40px;
+            margin-bottom: 40px;
+            border: 1px solid #f0f0f0;
         }
         
         .results-icon {
@@ -239,14 +253,15 @@
         
         .results-headline {
             font-size: 1.8rem;
-            color: #d2825b;
-            font-weight: 600;
-            margin-bottom: 10px;
+            color: #1a1a1a;
+            font-weight: 300;
+            margin-bottom: 15px;
+            letter-spacing: -0.01em;
         }
         
         .results-subtitle {
-            color: #7a9b8e;
-            font-style: italic;
+            color: #666;
+            font-weight: 300;
             font-size: 1rem;
         }
         
@@ -255,12 +270,13 @@
         }
         
         .category-title {
-            font-size: 1.4rem;
-            color: #2c3e50;
-            font-weight: 600;
-            margin-bottom: 20px;
-            padding-left: 10px;
-            border-left: 4px solid #d2825b;
+            font-size: 1.3rem;
+            color: #1a1a1a;
+            font-weight: 400;
+            margin-bottom: 25px;
+            padding-left: 15px;
+            border-left: 2px solid #e0e0e0;
+            letter-spacing: -0.01em;
         }
         
         .category-items {
@@ -274,14 +290,58 @@
         }
         
         .ai-commentary {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 8px;
-            padding: 10px 15px;
-            margin: 10px 0;
-            color: #7a9b8e;
+            background: #fafafa;
+            border-radius: 1px;
+            padding: 15px 20px;
+            margin: 15px 0;
+            color: #666;
             font-style: italic;
             font-size: 0.9rem;
-            border-left: 3px solid #d2825b;
+            border-left: 2px solid #e0e0e0;
+            font-weight: 300;
+            line-height: 1.5;
+        }
+        
+        .quick-searches {
+            margin: 25px 0;
+            text-align: center;
+        }
+        
+        .quick-searches-title {
+            color: #999;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            font-weight: 300;
+            letter-spacing: 0.02em;
+        }
+        
+        .quick-search-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            max-width: 100%;
+        }
+        
+        .quick-search-btn {
+            background: white;
+            border: 1px solid #e0e0e0;
+            color: #666;
+            padding: 12px 16px;
+            border-radius: 1px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-family: inherit;
+            font-weight: 300;
+        }
+        
+        .quick-search-btn:hover {
+            background: #f5f5f5;
+            border-color: #d0d0d0;
+            color: #1a1a1a;
         }
         
         .error {
@@ -333,6 +393,18 @@
             <button class="search-button" id="searchButton" onclick="searchItems()">
                 ✨ Summon My Perfect Pieces
             </button>
+            
+            <div class="quick-searches">
+                <p class="quick-searches-title">✨ Popular Magic Spells:</p>
+                <div class="quick-search-buttons">
+                    <button class="quick-search-btn" onclick="quickSearch('scandi dining table amsterdam')">🌿 Scandi Dining Table</button>
+                    <button class="quick-search-btn" onclick="quickSearch('mid century chair vintage')">🪑 Mid Century Chair</button>
+                    <button class="quick-search-btn" onclick="quickSearch('big painting artwork wall')">🎨 Big Paintings</button>
+                    <button class="quick-search-btn" onclick="quickSearch('vintage design lamp industrial')">💡 Vintage Design Lamp</button>
+                    <button class="quick-search-btn" onclick="quickSearch('boho mirror rattan')">🪞 Boho Mirror</button>
+                    <button class="quick-search-btn" onclick="quickSearch('industrial coffee table metal wood')">☕ Industrial Coffee Table</button>
+                </div>
+            </div>
             
             <div class="loading" id="loading">
                 <div class="loading-animation">
@@ -404,6 +476,9 @@
                 }
                 
                 const data = await response.json();
+                console.log('API Response:', data);
+                console.log('Results:', data.results);
+                console.log('Search terms:', data.search_terms);
                 displayResults(data.results, data.search_terms);
                 
             } catch (err) {
@@ -435,9 +510,11 @@
         }
         
         function displayResults(items, searchTerms) {
+            console.log('displayResults called with:', items, searchTerms);
             const resultsDiv = document.getElementById('results');
             
             if (!items || items.length === 0) {
+                console.log('No items found, showing empty state');
                 const emptyDiv = document.createElement('div');
                 emptyDiv.style.cssText = 'text-align: center; padding: 40px; color: #7a9b8e; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);';
                 emptyDiv.innerHTML = `
@@ -451,11 +528,43 @@
                 return;
             }
             
+            console.log('Found items:', items.length);
+            
             // Generate personalized commentary
             const styleWords = getStyleInsights(searchTerms);
             const personalizedHeadline = generatePersonalizedHeadline(items.length, searchTerms, styleWords);
             
-            // Group items for better presentation
+            // Simple test first - display basic results without grouping
+            console.log('Creating simple results display');
+            resultsDiv.innerHTML = '';
+            
+            // Create header
+            const header = document.createElement('div');
+            header.style.cssText = 'text-align: center; padding: 20px; background: #fafafa; margin-bottom: 20px;';
+            header.innerHTML = `<h3>✨ Found ${items.length} magical pieces!</h3>`;
+            resultsDiv.appendChild(header);
+            
+            // Create simple results list
+            items.slice(0, 5).forEach((item, index) => {
+                console.log(`Creating item ${index}:`, item.title);
+                const itemDiv = document.createElement('div');
+                itemDiv.style.cssText = 'padding: 15px; margin: 10px 0; background: white; border: 1px solid #ddd; border-radius: 5px;';
+                
+                itemDiv.innerHTML = `
+                    <h4 style="margin-bottom: 10px;">${escapeHtml(item.title || 'Vintage Find')}</h4>
+                    <p style="color: #666; margin-bottom: 8px;">💰 ${escapeHtml(item.price_text || 'Price on request')}</p>
+                    <p style="color: #666; margin-bottom: 10px;">📍 ${escapeHtml(item.location || 'Netherlands')}</p>
+                    <a href="${safeUrl(item.url)}" target="_blank" style="background: #1a1a1a; color: white; padding: 8px 16px; text-decoration: none; border-radius: 3px;">View Item</a>
+                `;
+                
+                resultsDiv.appendChild(itemDiv);
+            });
+            
+            resultsDiv.style.display = 'block';
+            console.log('Simple results display complete');
+            return;
+            
+            // Group items for better presentation (disabled for now)
             const groupedItems = groupItemsByType(items);
             
             // Create results safely to prevent XSS
@@ -555,10 +664,12 @@
             resultsHeader.appendChild(subtitle);
             
             // Clear and populate results
+            console.log('Setting results display to block');
             resultsDiv.innerHTML = '';
             resultsDiv.appendChild(resultsHeader);
             resultsDiv.appendChild(resultsContainer);
             resultsDiv.style.display = 'block';
+            console.log('Results div after setting:', resultsDiv);
         }
         
         function getStyleInsights(searchTerms) {
@@ -631,6 +742,12 @@
             const error = document.getElementById('error');
             error.textContent = message;
             error.style.display = 'block';
+        }
+        
+        function quickSearch(query) {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.value = query;
+            searchItems();
         }
         
         // Allow Enter key to trigger search
