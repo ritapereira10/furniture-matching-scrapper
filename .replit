@@ -16,10 +16,6 @@ run = ["uvicorn", "main:app", "--host=0.0.0.0", "--port=8000"]
 deploymentTarget = "cloudrun"
 
 [[ports]]
-localPort = 8000
-externalPort = 80
-
-[[ports]]
 localPort = 5000
 externalPort = 80
 
@@ -48,13 +44,13 @@ args = "FastAPI Server"
 name = "FastAPI Server"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python main.py"
 waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [agent]
 expertMode = true
