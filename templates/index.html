@@ -55,17 +55,19 @@
             line-height: 1.05;
         }
         
-        .subtitle {
-            font-family: var(--inter);
-            font-size: 1.2rem;
-            color: #666;
+        .subtitle-graphic {
             margin-bottom: var(--editorial-spacing);
-            line-height: 1.6;
-            font-weight: 400;
-            max-width: 500px;
+            text-align: center;
+            max-width: 600px;
             margin-left: auto;
             margin-right: auto;
-            letter-spacing: 0.005em;
+        }
+        
+        .subtitle-graphic img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
         }
         
         .search-section {
@@ -389,10 +391,9 @@
 <body>
     <div class="container">
         <h1 class="title">✨ Style Genie</h1>
-        <p class="subtitle">
-            Never Too Small · Smart Space Solutions<br>
-            Your personal AI interior designer who finds magical second-hand treasures perfectly matched to your unique style ✨
-        </p>
+        <div class="subtitle-graphic">
+            <img src="/static/subtitle-graphic.png" alt="Never Too Small - Smart Space Solutions - Your personal AI interior designer who finds magical second-hand treasures perfectly matched to your unique style" />
+        </div>
         
         <div class="search-section">
             <div class="search-icon">🏠</div>

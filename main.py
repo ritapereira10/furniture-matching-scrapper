@@ -51,6 +51,9 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Mount static files to serve images and assets
+app.mount("/static", StaticFiles(directory="."), name="static")
+
 BASE = "https://www.marktplaats.nl"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15"
