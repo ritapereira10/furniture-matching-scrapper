@@ -321,17 +321,17 @@ def parse_natural_language_query(query: str) -> dict:
     }
     
     style_translations = {
-        'mid century': ['mid century', 'mcm', 'jaren 60', 'teak', 'palissander', 'vintage'],
-        'scandi': ['scandinavisch', 'scandi', 'minimalistisch', 'licht hout', 'beige'],
-        'scandinavian': ['scandinavisch', 'scandi', 'minimalistisch', 'licht hout', 'beige'],
-        'japandi': ['japandi', 'eiken', 'licht hout', 'minimalistisch'],
-        'industrial': ['industrieel', 'metaal', 'staal', 'hout en metaal'],
-        'vintage': ['vintage', 'retro', 'oude'],
-        'boho': ['boho', 'rotan', 'riet', 'bamboe'],
-        'modern': ['modern', 'hedendaags', 'eigentijds'],
-        'antique': ['antiek', 'antieke', 'oude'],
-        'minimalist': ['minimalistisch', 'minimaal', 'simpel'],
-        'rustic': ['rustiek', 'landelijk', 'boerenhuisstijl']
+        'mid century': ['teak'],  # Simple, proven term
+        'scandi': ['scandinavisch'],
+        'scandinavian': ['scandinavisch'], 
+        'japandi': ['japandi'],
+        'industrial': ['industrieel'],
+        'vintage': ['vintage'],
+        'boho': ['rotan'],
+        'modern': ['modern'],
+        'antique': ['antiek'],
+        'minimalist': ['minimalistisch'],
+        'rustic': ['landelijk']
     }
     
     color_translations = {
@@ -394,56 +394,46 @@ def parse_natural_language_query(query: str) -> dict:
     if km_match:
         radius_km = int(km_match.group(1))
     
-    # Enhanced search term building with translations
-    search_terms_set = set()
+    # Simple search term building - use proven Dutch terms only
+    search_terms_parts = []
     
-    # Start with original query words (cleaned)
-    cleaned_query = query_lower
-    # Remove price patterns
-    for pattern in [r'max \d+ eur[o]?', r'onder \d+ eur[o]?', r'tot \d+ eur[o]?', r'\d+ eur[o]?', r'maximum \d+']:
-        cleaned_query = re.sub(pattern, '', cleaned_query)
-    # Remove distance patterns
-    cleaned_query = re.sub(r'\d+\s*km', '', cleaned_query)
-    # Remove common phrases
-    for phrase in ['find me', 'looking for', 'zoek', 'van me', 'from me', 'in de buurt']:
-        cleaned_query = cleaned_query.replace(phrase, '')
-    
-    # Add original terms
-    original_words = cleaned_query.split()
-    search_terms_set.update(original_words)
-    
-    # Add furniture translations
+    # Detect furniture type and add Dutch translation
+    item_type = None
     for english_term, dutch_terms in furniture_translations.items():
         if english_term in query_lower:
-            search_terms_set.update(dutch_terms)
+            search_terms_parts.append(dutch_terms[0])  # Use first Dutch term only
+            item_type = dutch_terms[0]
+            break
     
-    # Add style translations
+    # Detect style and add Dutch translation
     detected_style = None
     for english_style, dutch_terms in style_translations.items():
         if english_style in query_lower:
-            search_terms_set.update(dutch_terms)
+            search_terms_parts.extend(dutch_terms)  # Add style terms
             detected_style = english_style
             break
     
-    # Add color translations
+    # Detect colors and add Dutch translation
     for english_color, dutch_terms in color_translations.items():
         if english_color in query_lower:
-            search_terms_set.update(dutch_terms)
-    
-    # Detect item type
-    item_type = None
-    for english_item, dutch_terms in furniture_translations.items():
-        if english_item in query_lower:
-            item_type = dutch_terms[0]  # Use first Dutch term as primary
+            search_terms_parts.append(dutch_terms[0])  # Use first Dutch term only
             break
     
-    # Remove empty strings and clean up
-    search_terms_set = {term.strip() for term in search_terms_set if term.strip()}
+    # If no specific translations found, use simple fallback
+    if not search_terms_parts:
+        # For common room queries, use simple terms
+        if 'living room' in query_lower:
+            search_terms_parts = ['woonkamer']
+        elif 'bedroom' in query_lower:
+            search_terms_parts = ['slaapkamer']
+        elif 'dining room' in query_lower:
+            search_terms_parts = ['eetkamer']
+        else:
+            # Use original query as last resort
+            search_terms_parts = [query]
     
-    # Create final search string
-    search_terms = ' '.join(search_terms_set)
-    if not search_terms:
-        search_terms = query
+    # Create final search string (max 3 terms for better results)
+    search_terms = ' '.join(search_terms_parts[:3])
     
     return {
         "search_terms": search_terms,
