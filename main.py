@@ -530,14 +530,56 @@ def smart_search(request: SmartSearchRequest):
         # Sort by price (priced items first, lowest first)
         filtered_items.sort(key=lambda x: (x["price_eur"] is None, x["price_eur"] if x["price_eur"] is not None else 1e12))
         
-        return {
-            "query": request.query,
-            "parsed_parameters": parsed_query,
-            "search_terms": search_terms,
-            "total_found": len(items),
-            "results_after_filtering": len(filtered_items),
-            "results": filtered_items[:20]  # Limit to 20 results for MVP
+        # Transform to match Style Genie specification
+        formatted_items = []
+        for item in filtered_items[:20]:  # Limit to 20 results
+            formatted_item = {
+                "title": item.get("title", ""),
+                "price": item.get("price_eur", 0),
+                "currency": "EUR",
+                "url": item.get("url", ""),
+                "image": item.get("image_url", ""),
+                "source": "Marktplaats",
+                "distance_km": None,  # Could be calculated based on location in future
+                "posted_at": item.get("posted_at", "")
+            }
+            formatted_items.append(formatted_item)
+        
+        # Format parsed query to match specification
+        formatted_parsed_query = {
+            "item_type": parsed_query.get("item_type"),
+            "style": parsed_query.get("style"),
+            "min_price": parsed_query.get("min_price_eur"),
+            "max_price": parsed_query.get("max_price_eur"),
+            "city": parsed_query.get("location") or "Amsterdam",  # Default to Amsterdam
+            "radius_km": parsed_query.get("radius_km")
         }
+        
+        # Check if query is too generic and add suggestions
+        suggestions = None
+        if len(request.query.split()) <= 2 and not any([
+            parsed_query.get("style"), 
+            parsed_query.get("max_price_eur"), 
+            parsed_query.get("location")
+        ]):
+            suggestions = [
+                "vintage style",
+                "under €150", 
+                "mid century modern",
+                "industrial look",
+                "in Rotterdam",
+                "scandinavian design"
+            ]
+        
+        response = {
+            "parsed_query": formatted_parsed_query,
+            "items": formatted_items
+        }
+        
+        if suggestions:
+            response["suggestions"] = suggestions
+            
+        return response
         
     except Exception as e:
         logger.error(f"Smart search failed: {e}")
