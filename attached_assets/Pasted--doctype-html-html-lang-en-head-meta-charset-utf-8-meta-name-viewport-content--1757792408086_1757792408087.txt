@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Style Genie</title>
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>">
+</head>
+<body class="bg-neutral-50 text-neutral-900">
+  <main class="max-w-4xl mx-auto p-6">
+    <!-- Hero -->
+    <section class="text-center mb-8">
+      <h1 class="text-4xl font-semibold tracking-tight">✨ Style Genie</h1>
+      <p class="text-neutral-600 mt-2">Tell me your dream piece, I’ll find second-hand gems nearby.</p>
+    </section>
+
+    <!-- Search + Refiners -->
+    <section class="bg-white rounded-2xl shadow p-5 mb-6">
+      <form id="search-form" class="space-y-4">
+        <input id="q" type="text" placeholder="Find me a max €120 mid-century chair in Amsterdam"
+               class="w-full rounded-xl border border-neutral-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-black/10" />
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm text-neutral-600 mb-1">Min price (€)</label>
+            <input id="min" type="number" min="0" step="5"
+                   class="w-full rounded-xl border border-neutral-200 px-3 py-2" placeholder="0" />
+          </div>
+          <div>
+            <label class="block text-sm text-neutral-600 mb-1">Max price (€)</label>
+            <input id="max" type="number" min="0" step="5"
+                   class="w-full rounded-xl border border-neutral-200 px-3 py-2" placeholder="150" />
+          </div>
+          <div>
+            <label class="block text-sm text-neutral-600 mb-1">Radius (km)</label>
+            <input id="km" type="range" min="1" max="30" value="10" class="w-full">
+            <div class="text-xs text-neutral-500 mt-1"><span id="kmVal">10</span> km</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button class="px-5 py-3 rounded-xl bg-black text-white hover:bg-neutral-800 transition"
+                  type="submit">✨ Summon</button>
+          <button id="clear" class="text-sm text-neutral-600 hover:text-neutral-900" type="button">Clear</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Results -->
+    <section>
+      <div id="status" class="hidden text-sm text-neutral-500 mb-3"></div>
+      <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+      <div id="empty" class="hidden text-center text-neutral-600 mt-8">
+        No matches yet. Try widening price or radius, or tweak your prompt.
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const kmInput = document.getElementById('km');
+    const kmVal = document.getElementById('kmVal');
+    const form = document.getElementById('search-form');
+    const qEl = document.getElementById('q');
+    const minEl = document.getElementById('min');
+    const maxEl = document.getElementById('max');
+    const grid = document.getElementById('grid');
+    const empty = document.getElementById('empty');
+    const status = document.getElementById('status');
+    const clearBtn = document.getElementById('clear');
+
+    kmInput.addEventListener('input', () => kmVal.textContent = kmInput.value);
+
+    function card(item){
+      return `
+      <a href="${item.url}" target="_blank" class="block bg-white rounded-2xl shadow hover:shadow-lg transition overflow-hidden">
+        <div class="aspect-[4/3] bg-neutral-100">
+          <img src="${item.image || ''}" alt="" class="w-full h-full object-cover">
+        </div>
+        <div class="p-4">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="font-medium line-clamp-2">${item.title || 'Untitled'}</h3>
+            <span class="text-sm bg-neutral-100 rounded-lg px-2 py-1">${item.source || ''}</span>
+          </div>
+          <div class="mt-2 flex items-center justify-between text-sm text-neutral-600">
+            <span>€${Number(item.price).toFixed(0)}</span>
+            <span>${item.distance_km ? `${item.distance_km.toFixed(1)} km` : ''}</span>
+          </div>
+        </div>
+      </a>`;
+    }
+
+    function setLoading(is){
+      status.classList.remove('hidden');
+      status.textContent = is ? 'Searching…' : '';
+      if(!is) status.classList.add('hidden');
+    }
+
+    function render(items){
+      grid.innerHTML = items.map(card).join('');
+      empty.classList.toggle('hidden', items.length > 0);
+    }
+
+    async function fetchResults(){
+      const payload = {
+        q: qEl.value || '',
+        min_price: minEl.value ? Number(minEl.value) : null,
+        max_price: maxEl.value ? Number(maxEl.value) : null,
+        radius_km: Number(kmInput.value) || 10,
+        city: "Amsterdam"
+      };
+      setLoading(true);
+      try{
+        const res = await fetch('/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        render((data && data.items) ? data.items : []);
+      } catch(e){
+        console.error(e);
+        render([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    form.addEventListener('submit', (e) => { e.preventDefault(); fetchResults(); });
+
+    // live refining: debounce sliders / inputs
+    let t; 
+    [minEl, maxEl, kmInput].forEach(el => {
+      el.addEventListener('input', () => {
+        clearTimeout(t);
+        t = setTimeout(fetchResults, 300);
+      });
+    });
+
+    clearBtn.addEventListener('click', () => {
+      qEl.value = '';
+      minEl.value = '';
+      maxEl.value = '';
+      kmInput.value = 10; kmVal.textContent = 10;
+      grid.innerHTML = ''; empty.classList.add('hidden');
+    });
+  </script>
+</body>
+</html>
