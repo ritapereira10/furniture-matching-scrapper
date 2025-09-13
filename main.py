@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -21,6 +22,155 @@ logger = logging.getLogger(__name__)
 # the newest OpenAI model is "gpt-5" which was released August 7, 2025.
 # do not change this unless explicitly requested by the user
 openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+def translate_dutch_title_to_english(dutch_title):
+    """Translate Dutch furniture titles to English for better UX"""
+    if not dutch_title:
+        return dutch_title
+    
+    # Common Dutch-English furniture translations
+    translations = {
+        # Furniture types
+        'stoel': 'chair',
+        'stoelen': 'chairs', 
+        'fauteuil': 'armchair',
+        'fauteuils': 'armchairs',
+        'tafel': 'table',
+        'tafels': 'tables',
+        'salontafel': 'coffee table',
+        'eettafel': 'dining table',
+        'bijzettafel': 'side table',
+        'bureau': 'desk',
+        'kast': 'cabinet',
+        'kasten': 'cabinets',
+        'lamp': 'lamp',
+        'lampen': 'lamps',
+        'hanglamp': 'pendant lamp',
+        'vloerlamp': 'floor lamp',
+        'bank': 'sofa',
+        'banken': 'sofas',
+        'spiegel': 'mirror',
+        'spiegels': 'mirrors',
+        'kruk': 'stool',
+        'krukken': 'stools',
+        'rek': 'rack',
+        'rekken': 'racks',
+        'wandrek': 'wall rack',
+        
+        # Materials
+        'teak': 'teak wood',
+        'teakhouk': 'teak wood', 
+        'teakhout': 'teak wood',
+        'hout': 'wood',
+        'houten': 'wooden',
+        'massief': 'solid',
+        'fluweel': 'velvet',
+        'leder': 'leather',
+        'leer': 'leather', 
+        'metaal': 'metal',
+        'ijzer': 'iron',
+        'staal': 'steel',
+        'glas': 'glass',
+        'glazen': 'glass',
+        
+        # Styles & descriptors
+        'vintage': 'vintage',
+        'retro': 'retro',
+        'industrieel': 'industrial',
+        'industriële': 'industrial',
+        'jaren 60': '1960s',
+        'jaren 70': '1970s',
+        'scandinavisch': 'Scandinavian',
+        'minimalistisch': 'minimalist',
+        'modern': 'modern',
+        'antiek': 'antique',
+        'klassiek': 'classic',
+        'design': 'design',
+        
+        # Common words
+        'met': 'with',
+        'zonder': 'without', 
+        'groot': 'large',
+        'kleine': 'small',
+        'nieuwe': 'new',
+        'nieuw': 'new',
+        'oude': 'old',
+        'oud': 'old',
+        'originele': 'original',
+        'origineel': 'original',
+        'prachtige': 'beautiful',
+        'prachtig': 'beautiful',
+        'unieke': 'unique',
+        'uniek': 'unique',
+        'betrouwbaar': 'reliable',
+        'nauwkeurig': 'accurate',
+        'weegschaal': 'scale',
+        'dienblad': 'tray',
+        'bekers': 'cups',
+        'laden': 'drawers',
+        'planken': 'shelves',
+        'vormig': 'shaped',
+        'hoekbureau': 'corner desk',
+        'klaptafel': 'folding table',
+        'rond': 'round',
+        'stapelbaar': 'stackable',
+        'inklapbare': 'foldable',
+        'tuintafel': 'garden table'
+    }
+    
+    # Convert to lowercase for translation, preserve original case structure
+    lower_title = dutch_title.lower()
+    translated_words = []
+    
+    # Split on common delimiters and translate each part
+    import re
+    words = re.findall(r'\b\w+\b', dutch_title)
+    
+    for word in words:
+        lower_word = word.lower()
+        if lower_word in translations:
+            # Try to preserve capitalization
+            if word.isupper():
+                translated_words.append(translations[lower_word].upper())
+            elif word.istitle():
+                translated_words.append(translations[lower_word].title())
+            else:
+                translated_words.append(translations[lower_word])
+        else:
+            translated_words.append(word)
+    
+    # Rejoin with appropriate spacing
+    result = ' '.join(translated_words)
+    
+    # Clean up common patterns
+    result = re.sub(r'\s*-\s*', ' - ', result)  # Standardize dashes
+    result = re.sub(r'\s+', ' ', result)  # Remove extra spaces
+    result = result.strip()
+    
+    return result if result != dutch_title else dutch_title
+
+def translate_price_text_to_english(dutch_price_text):
+    """Translate Dutch price terms to English"""
+    if not dutch_price_text:
+        return dutch_price_text
+    
+    price_translations = {
+        'bieden': 'Negotiable',
+        'gratis': 'Free', 
+        'vraagprijs': 'Asking price',
+        'vanaf': 'From',
+        'per': 'per',
+        'stuk': 'piece',
+        'set': 'set'
+    }
+    
+    # Convert to lowercase for matching, preserve original format
+    lower_text = dutch_price_text.lower()
+    for dutch_term, english_term in price_translations.items():
+        if dutch_term in lower_text:
+            return english_term
+    
+    return dutch_price_text
 
 app = FastAPI(
     title="Marktplaats Scraper API", 
@@ -49,6 +199,15 @@ app = FastAPI(
     - **description**: Item description (when available)
     """,
     version="1.0.0"
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5000", "http://127.0.0.1:5000", "http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Mount static files to serve images and assets
@@ -174,8 +333,8 @@ def scrape(
                 item = {
                     "id": lid,
                     "url": full_url,
-                    "title": title_el.get_text(strip=True) if title_el else "",
-                    "price_text": price_el.get_text(strip=True) if price_el else None,
+                    "title": translate_dutch_title_to_english(title_el.get_text(strip=True)) if title_el else "",
+                    "price_text": translate_price_text_to_english(price_el.get_text(strip=True)) if price_el else None,
                     "price_eur": parse_price(price_el.get_text(strip=True)) if price_el else None,
                     "location": loc_el.get_text(strip=True) if loc_el else None,
                     "posted_at": date_el.get_text(strip=True) if date_el else None,
@@ -262,8 +421,8 @@ def batch_search(request: BatchSearchRequest):
                     item = {
                         "id": lid,
                         "url": full_url,
-                        "title": title_el.get_text(strip=True) if title_el else "",
-                        "price_text": price_el.get_text(strip=True) if price_el else None,
+                        "title": translate_dutch_title_to_english(title_el.get_text(strip=True)) if title_el else "",
+                        "price_text": translate_price_text_to_english(price_el.get_text(strip=True)) if price_el else None,
                         "price_eur": parse_price(price_el.get_text(strip=True)) if price_el else None,
                         "location": loc_el.get_text(strip=True) if loc_el else None,
                         "posted_at": date_el.get_text(strip=True) if date_el else None,
@@ -513,8 +672,8 @@ def smart_search(request: SmartSearchRequest):
                 item = {
                     "id": lid,
                     "url": full_url,
-                    "title": title_el.get_text(strip=True) if title_el else "",
-                    "price_text": price_el.get_text(strip=True) if price_el else None,
+                    "title": translate_dutch_title_to_english(title_el.get_text(strip=True)) if title_el else "",
+                    "price_text": translate_price_text_to_english(price_el.get_text(strip=True)) if price_el else None,
                     "price_eur": parse_price(price_el.get_text(strip=True)) if price_el else None,
                     "location": loc_el.get_text(strip=True) if loc_el else None,
                     "posted_at": date_el.get_text(strip=True) if date_el else None,
@@ -541,16 +700,33 @@ def smart_search(request: SmartSearchRequest):
         # Sort by price (priced items first, lowest first)
         filtered_items.sort(key=lambda x: (x["price_eur"] is None, x["price_eur"] if x["price_eur"] is not None else 1e12))
         
-        # Transform to match Style Genie specification
+        # Transform to match Style Genie specification with English translation
         formatted_items = []
         for item in filtered_items[:20]:  # Limit to 20 results
+            # Translate Dutch title to English for better UX
+            title = item.get("title", "")
+            english_title = translate_dutch_title_to_english(title)
+            
+            # Translate price text (Bieden, Gratis, etc.)
+            price_text = item.get("price_text", "")
+            english_price_text = translate_price_text_to_english(price_text)
+            
+            # Extract city from location (remove "Netherlands" suffix)
+            location = item.get("location", "")
+            if location and location.lower().endswith(", nederland"):
+                location = location.replace(", Nederland", "").replace(", nederland", "")
+            elif location and location.lower() == "heel nederland":
+                location = "Netherlands"
+            
             formatted_item = {
-                "title": item.get("title", ""),
+                "title": english_title,
                 "price": item.get("price_eur", 0),
-                "currency": "EUR",
+                "price_text": english_price_text,
+                "currency": "EUR", 
                 "url": item.get("url", ""),
                 "image": item.get("image_url", ""),
                 "source": "Marktplaats",
+                "location": location,
                 "distance_km": None,  # Could be calculated based on location in future
                 "posted_at": item.get("posted_at", "")
             }
@@ -710,8 +886,8 @@ def get_style_collection(request: StyleCollectionRequest):
                             item = {
                                 "id": lid,
                                 "url": full_url,
-                                "title": title_el.get_text(strip=True) if title_el else "",
-                                "price_text": price_el.get_text(strip=True) if price_el else "",
+                                "title": translate_dutch_title_to_english(title_el.get_text(strip=True)) if title_el else "",
+                                "price_text": translate_price_text_to_english(price_el.get_text(strip=True)) if price_el else "",
                                 "location": loc_el.get_text(strip=True) if loc_el else "",
                                 "image_url": img_el.get("src") or img_el.get("data-src") if img_el else None,
                                 "style_match": style_term,
@@ -749,5 +925,5 @@ def health_check():
 
 if __name__ == "__main__":
     import os
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port, workers=1, log_level="info")
