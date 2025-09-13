@@ -414,12 +414,12 @@
             <div class="quick-searches">
                 <p class="quick-searches-title">✨ Popular Magic Spells:</p>
                 <div class="quick-search-buttons">
-                    <button class="quick-search-btn" onclick="quickSearch('teak stoel')">🪑 Mid Century Chair</button>
-                    <button class="quick-search-btn" onclick="quickSearch('teak tafel')">🌿 Mid Century Table</button>
-                    <button class="quick-search-btn" onclick="quickSearch('vintage stoel')">🎨 Vintage Chair</button>
-                    <button class="quick-search-btn" onclick="quickSearch('lamp design')">💡 Design Lamp</button>
-                    <button class="quick-search-btn" onclick="quickSearch('industrieel metaal')">⚙️ Industrial Style</button>
-                    <button class="quick-search-btn" onclick="quickSearch('licht hout')">🌿 Scandinavian Wood</button>
+                    <button class="quick-search-btn" onclick="quickSearch('mid century chair', 'teak stoel')">🪑 Mid Century Chair</button>
+                    <button class="quick-search-btn" onclick="quickSearch('mid century table', 'teak tafel')">🌿 Mid Century Table</button>
+                    <button class="quick-search-btn" onclick="quickSearch('vintage chair', 'vintage stoel')">🎨 Vintage Chair</button>
+                    <button class="quick-search-btn" onclick="quickSearch('design lamp', 'lamp design')">💡 Design Lamp</button>
+                    <button class="quick-search-btn" onclick="quickSearch('industrial style', 'industrieel metaal')">⚙️ Industrial Style</button>
+                    <button class="quick-search-btn" onclick="quickSearch('scandinavian wood', 'licht hout')">🌿 Scandinavian Wood</button>
                 </div>
             </div>
             
@@ -480,12 +480,21 @@
             }, 1500);
             
             try {
+                const searchInput = document.getElementById('searchInput');
+                const payload = { query: query };
+                
+                // Add Dutch search terms if available from quick-search buttons
+                if (searchInput.dataset.dutchTerms) {
+                    payload.nl_terms = searchInput.dataset.dutchTerms;
+                    delete searchInput.dataset.dutchTerms; // Clean up
+                }
+                
                 const response = await fetch('/smart-search', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ query: query })
+                    body: JSON.stringify(payload)
                 });
                 
                 if (!response.ok) {
@@ -494,9 +503,8 @@
                 
                 const data = await response.json();
                 console.log('API Response:', data);
-                console.log('Results:', data.results);
-                console.log('Search terms:', data.search_terms);
-                displayResults(data.results, data.search_terms);
+                console.log('Items:', data.items);
+                displayResults(data.items, data.parsed_query);
                 
             } catch (err) {
                 console.error('Search error:', err);
@@ -526,9 +534,12 @@
             }
         }
         
-        function displayResults(items, searchTerms) {
-            console.log('displayResults called with:', items, searchTerms);
+        function displayResults(items, parsedQuery) {
+            console.log('displayResults called with:', items, parsedQuery);
             const resultsDiv = document.getElementById('results');
+            
+            // Extract search context for display
+            const searchContext = parsedQuery ? `${parsedQuery.item_type || ''} ${parsedQuery.style || ''}`.trim() : 'your search';
             
             if (!items || items.length === 0) {
                 console.log('No items found, showing empty state');
@@ -537,7 +548,7 @@
                 emptyDiv.innerHTML = `
                     <div style="font-size: 3rem; margin-bottom: 15px;">🔮</div>
                     <h3 style="color: #d2825b; margin-bottom: 10px;">The crystal ball is cloudy...</h3>
-                    <p>I couldn't find any treasures matching "${escapeHtml(searchTerms)}". Try describing your dreams differently! ✨</p>
+                    <p>I couldn't find any treasures matching "${escapeHtml(searchContext)}". Try describing your dreams differently! ✨</p>
                 `;
                 resultsDiv.innerHTML = '';
                 resultsDiv.appendChild(emptyDiv);
@@ -548,8 +559,8 @@
             console.log('Found items:', items.length);
             
             // Generate personalized commentary
-            const styleWords = getStyleInsights(searchTerms);
-            const personalizedHeadline = generatePersonalizedHeadline(items.length, searchTerms, styleWords);
+            const styleWords = getStyleInsights(searchContext);
+            const personalizedHeadline = generatePersonalizedHeadline(items.length, searchContext, styleWords);
             
             // Simple test first - display basic results without grouping
             console.log('Creating simple results display');
@@ -761,9 +772,14 @@
             error.style.display = 'block';
         }
         
-        function quickSearch(query) {
+        function quickSearch(englishQuery, dutchTerms = null) {
             const searchInput = document.getElementById('searchInput');
-            searchInput.value = query;
+            searchInput.value = englishQuery; // Show English in the UI
+            
+            // Store Dutch terms for the API call
+            if (dutchTerms) {
+                searchInput.dataset.dutchTerms = dutchTerms;
+            }
             searchItems();
         }
         
