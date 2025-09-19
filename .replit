@@ -25,6 +25,10 @@ localPort = 8000
 externalPort = 8000
 
 [[ports]]
+localPort = 39025
+externalPort = 3001
+
+[[ports]]
 localPort = 44491
 externalPort = 3000
 
@@ -49,10 +53,6 @@ author = "agent"
 task = "workflow.run"
 args = "FastAPI Backend"
 
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "React Frontend"
-
 [[workflows.workflow]]
 name = "FastAPI Backend"
 author = "agent"
@@ -64,18 +64,6 @@ outputType = "console"
 task = "shell.exec"
 args = "python main.py"
 waitForPort = 8000
-
-[[workflows.workflow]]
-name = "React Frontend"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd frontend && npm run dev"
-waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [agent]
 expertMode = true
