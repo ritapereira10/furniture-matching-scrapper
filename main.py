@@ -605,6 +605,12 @@ def parse_natural_language_query(query: str) -> dict:
     # Create final search string (max 3 terms for better results)
     search_terms = ' '.join(search_terms_parts[:3])
     
+    # Default to Amsterdam within 10km if no location specified
+    if location is None:
+        location = "amsterdam"
+    if radius_km is None:
+        radius_km = 10
+    
     return {
         "search_terms": search_terms,
         "max_price_eur": max_price,
