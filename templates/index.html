@@ -572,17 +572,35 @@
             header.innerHTML = `<h3>✨ Found ${items.length} magical pieces!</h3>`;
             resultsDiv.appendChild(header);
             
-            // Create simple results list
-            items.slice(0, 5).forEach((item, index) => {
+            // Create simple results list with image previews
+            items.slice(0, 8).forEach((item, index) => {
                 console.log(`Creating item ${index}:`, item.title);
                 const itemDiv = document.createElement('div');
-                itemDiv.style.cssText = 'padding: 15px; margin: 10px 0; background: white; border: 1px solid #ddd; border-radius: 5px;';
+                itemDiv.style.cssText = 'display: flex; padding: 20px; margin: 15px 0; background: white; border: 1px solid #e0e0e0; border-radius: 8px; gap: 15px; transition: border-color 0.2s ease;';
+                itemDiv.onmouseover = () => itemDiv.style.borderColor = '#d0d0d0';
+                itemDiv.onmouseout = () => itemDiv.style.borderColor = '#e0e0e0';
+                
+                // Create image element if image URL exists
+                let imageHTML = '';
+                if (item.image && safeUrl(item.image) !== '#') {
+                    imageHTML = `
+                        <div style="flex-shrink: 0;">
+                            <img src="${safeUrl(item.image)}" 
+                                 alt="${escapeHtml(item.title || 'Product image')}" 
+                                 style="width: 120px; height: 120px; object-fit: cover; border-radius: 6px; border: 1px solid #f0f0f0;"
+                                 onerror="this.style.display='none'">
+                        </div>
+                    `;
+                }
                 
                 itemDiv.innerHTML = `
-                    <h4 style="margin-bottom: 10px;">${escapeHtml(item.title || 'Vintage Find')}</h4>
-                    <p style="color: #666; margin-bottom: 8px;">💰 ${escapeHtml(item.price_text || 'Price on request')}</p>
-                    <p style="color: #666; margin-bottom: 10px;">📍 ${escapeHtml(item.location || 'Netherlands')}</p>
-                    <a href="${safeUrl(item.url)}" target="_blank" style="background: #1a1a1a; color: white; padding: 8px 16px; text-decoration: none; border-radius: 3px;">View Item</a>
+                    ${imageHTML}
+                    <div style="flex: 1; min-width: 0;">
+                        <h4 style="margin-bottom: 12px; font-size: 1.1rem; color: #1a1a1a; line-height: 1.3;">${escapeHtml(item.title || 'Vintage Find')}</h4>
+                        <p style="color: #1a1a1a; margin-bottom: 8px; font-weight: 500; font-size: 1.1rem;">💰 ${escapeHtml(item.price_text || 'Price on request')}</p>
+                        <p style="color: #666; margin-bottom: 15px; font-size: 0.9rem;">📍 ${escapeHtml(item.location || 'Netherlands')}</p>
+                        <a href="${safeUrl(item.url)}" target="_blank" style="background: #1a1a1a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-size: 0.9rem; display: inline-block; transition: background 0.2s ease;" onmouseover="this.style.background='#333'" onmouseout="this.style.background='#1a1a1a'">View Item ✨</a>
+                    </div>
                 `;
                 
                 resultsDiv.appendChild(itemDiv);
