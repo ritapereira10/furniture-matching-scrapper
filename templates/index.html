@@ -450,6 +450,7 @@
         
         let messageIndex = 0;
         let messageInterval;
+        let currentSearchQuery = ''; // Store the original search query for filtering
 
         async function searchItems() {
             const query = document.getElementById('searchInput').value.trim();
@@ -478,6 +479,9 @@
                 messageIndex = (messageIndex + 1) % magicalMessages.length;
                 loadingMessage.textContent = magicalMessages[messageIndex];
             }, 1500);
+            
+            // Store the current search query for filtering
+            currentSearchQuery = query;
             
             try {
                 const searchInput = document.getElementById('searchInput');
@@ -646,6 +650,13 @@
             
             resultsDiv.style.display = 'block';
             console.log('Simple results display complete');
+            
+            // Add event listener to the Apply Filters button
+            const applyFiltersBtn = document.getElementById('applyFilters');
+            if (applyFiltersBtn) {
+                applyFiltersBtn.onclick = applyFilters;
+            }
+            
             return;
             
             // Group items for better presentation (disabled for now)
@@ -837,6 +848,76 @@
                 searchInput.dataset.dutchTerms = dutchTerms;
             }
             searchItems();
+        }
+        
+        // Apply filters function
+        async function applyFilters() {
+            if (!currentSearchQuery) {
+                showError('Please perform a search first before applying filters! ✨');
+                return;
+            }
+            
+            // Get filter values
+            const location = document.getElementById('locationFilter').value;
+            const radius = document.getElementById('radiusFilter').value;
+            const maxPrice = document.getElementById('priceFilter').value;
+            
+            // Construct filtered query
+            let filteredQuery = currentSearchQuery;
+            
+            // Remove any existing location/price/radius from the original query
+            filteredQuery = filteredQuery.replace(/\b(amsterdam|rotterdam|utrecht|den haag|eindhoven|tilburg|groningen)\b/gi, '');
+            filteredQuery = filteredQuery.replace(/\b\d+\s*km\b/gi, '');
+            filteredQuery = filteredQuery.replace(/\b(max|onder|tot)\s*\d+\s*(eur)?\b/gi, '');
+            
+            // Add new filters
+            filteredQuery += ` ${location}`;
+            if (radius) {
+                filteredQuery += ` ${radius}km`;
+            }
+            if (maxPrice) {
+                filteredQuery += ` max ${maxPrice} eur`;
+            }
+            
+            // Clean up extra spaces
+            filteredQuery = filteredQuery.trim().replace(/\s+/g, ' ');
+            
+            console.log('Applying filters:', { location, radius, maxPrice, filteredQuery });
+            
+            // Perform filtered search
+            try {
+                const searchButton = document.getElementById('searchButton');
+                const loading = document.getElementById('loading');
+                const results = document.getElementById('results');
+                const error = document.getElementById('error');
+                
+                // Show loading state
+                loading.style.display = 'block';
+                results.style.display = 'none';
+                error.style.display = 'none';
+                
+                const response = await fetch('/smart-search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: filteredQuery })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Filtered API Response:', data);
+                displayResults(data.items, data.parsed_query);
+                
+            } catch (err) {
+                console.error('Filter search error:', err);
+                showError('Sorry, something went wrong with the filtered search. Please try again!');
+            } finally {
+                loading.style.display = 'none';
+            }
         }
         
         // Allow Enter key to trigger search
