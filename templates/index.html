@@ -566,10 +566,48 @@
             console.log('Creating simple results display');
             resultsDiv.innerHTML = '';
             
-            // Create header
+            // Create header with filters
             const header = document.createElement('div');
-            header.style.cssText = 'text-align: center; padding: 20px; background: #fafafa; margin-bottom: 20px;';
-            header.innerHTML = `<h3>✨ Found ${items.length} magical pieces!</h3>`;
+            header.style.cssText = 'text-align: center; padding: 20px; background: #fafafa; margin-bottom: 20px; border-radius: 8px;';
+            header.innerHTML = `
+                <h3 style="margin-bottom: 20px;">✨ Found ${items.length} magical pieces!</h3>
+                <div class="search-filters" style="display: flex; gap: 15px; align-items: center; justify-content: center; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="font-size: 0.9rem; color: #666;">📍 Location:</label>
+                        <select id="locationFilter" style="padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 0.9rem; background: white;">
+                            <option value="amsterdam">Amsterdam</option>
+                            <option value="rotterdam">Rotterdam</option>
+                            <option value="utrecht">Utrecht</option>
+                            <option value="den haag">Den Haag</option>
+                            <option value="eindhoven">Eindhoven</option>
+                            <option value="tilburg">Tilburg</option>
+                            <option value="groningen">Groningen</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="font-size: 0.9rem; color: #666;">🚗 Radius:</label>
+                        <select id="radiusFilter" style="padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 0.9rem; background: white;">
+                            <option value="5">5 km</option>
+                            <option value="10" selected>10 km</option>
+                            <option value="25">25 km</option>
+                            <option value="50">50 km</option>
+                            <option value="100">100 km</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="font-size: 0.9rem; color: #666;">💰 Max Price:</label>
+                        <select id="priceFilter" style="padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 0.9rem; background: white;">
+                            <option value="">Any price</option>
+                            <option value="50">€50</option>
+                            <option value="100">€100</option>
+                            <option value="250">€250</option>
+                            <option value="500">€500</option>
+                            <option value="1000">€1000</option>
+                        </select>
+                    </div>
+                    <button id="applyFilters" style="background: #1a1a1a; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-size: 0.9rem; cursor: pointer; transition: background 0.2s ease;" onmouseover="this.style.background='#333'" onmouseout="this.style.background='#1a1a1a'">🔍 Apply Filters</button>
+                </div>
+            `;
             resultsDiv.appendChild(header);
             
             // Create simple results list with image previews
