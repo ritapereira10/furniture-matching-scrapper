@@ -21,8 +21,8 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 8000
-externalPort = 8000
+localPort = 40489
+externalPort = 3001
 
 [[ports]]
 localPort = 44491
@@ -54,12 +54,12 @@ name = "FastAPI Backend"
 author = "agent"
 
 [workflows.workflow.metadata]
-outputType = "console"
+outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python main.py"
-waitForPort = 8000
+waitForPort = 5000
 
 [agent]
 expertMode = true
