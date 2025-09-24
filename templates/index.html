@@ -562,9 +562,8 @@
             
             console.log('Found items:', items.length);
             
-            // Generate personalized commentary
-            const styleWords = getStyleInsights(searchContext);
-            const personalizedHeadline = generatePersonalizedHeadline(items.length, searchContext, styleWords);
+            // Simple headline for now
+            const personalizedHeadline = `Found ${items.length} magical pieces!`;
             
             // Simple test first - display basic results without grouping
             console.log('Creating simple results display');
