@@ -1,9 +1,9 @@
 entrypoint = "main.py"
-modules = ["python-3.11", "nodejs-20"]
+modules = ["python-3.11"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["geckodriver", "gitFull", "glibcLocales", "jq", "playwright-driver", "xcodebuild", "zlib"]
+packages = ["geckodriver", "gitFull", "glibcLocales", "playwright-driver", "xcodebuild", "zlib", "jq"]
 
 [unitTest]
 language = "python3"
@@ -12,17 +12,16 @@ language = "python3"
 requiredFiles = [".replit", "replit.nix"]
 
 [deployment]
-deploymentTarget = "vm"
-publicDir = "test"
-run = ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+run = ["uvicorn", "main:app", "--host=0.0.0.0", "--port=8000"]
+deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 8000
+externalPort = 80
 
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 44491
-externalPort = 3000
 
 [workflows]
 runButton = "Project"
@@ -43,20 +42,19 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "FastAPI Backend"
+args = "FastAPI Server"
 
 [[workflows.workflow]]
-name = "FastAPI Backend"
+name = "FastAPI Server"
 author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python main.py"
 waitForPort = 5000
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [agent]
 expertMode = true
-integrations = ["python_openai:1.0.0"]
