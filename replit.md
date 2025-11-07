@@ -1,8 +1,8 @@
 # Overview
 
-**Atelier** is a luxury furniture discovery platform that curates Marktplaats listings based on either Pinterest board aesthetic analysis OR natural language descriptions. The experience feels like "walking in a very nice vintage high-level furniture shop" with personalized, boutique-style recommendations.
+**Atelier** is a Gen Z-styled furniture discovery platform that curates Marktplaats listings based on either Pinterest board aesthetic analysis OR natural language descriptions. The experience features bold, vibrant design with playful language that makes vintage furniture hunting fun and engaging.
 
-The system transforms raw marketplace listings into curated "pieces" with provenance stories, elegant presentation, and high-end boutique styling. Users can either share their Pinterest moodboard or describe their dream space in natural language, and Atelier searches Marktplaats to find matching vintage and designer furniture.
+The system transforms raw marketplace listings into curated "pieces" with immediate price visibility, location info, and real descriptions. Users can either share their Pinterest moodboard or describe their dream space in natural language, and Atelier searches Marktplaats to find matching vintage and designer furniture.
 
 # User Preferences
 
@@ -16,9 +16,9 @@ Preferred communication style: Simple, everyday language.
 - **RESTful API Design**: Simple endpoint structure with GET routes for root and scraping operations
 
 ## Application Structure
-- **Frontend**: Elegant HTML/CSS interface served via Jinja2 templates with boutique aesthetic
+- **Frontend**: Bold Gen Z-styled HTML/CSS interface served via Jinja2 templates
 - **Backend**: Single file architecture in `main.py` with FastAPI endpoints
-- **Templates**: Luxury design with serif fonts (Cormorant Garamond), muted cream/charcoal palette, generous white space
+- **Templates**: Gen Z design with chunky fonts (Space Grotesk, DM Sans), vibrant gradients (pink/orange, blue/purple), bold black borders with box shadows, playful casual language
 - **Development Server**: Configured to run on host `0.0.0.0` and port `5000` for accessibility
 
 ## Scraping Architecture
@@ -51,16 +51,17 @@ Preferred communication style: Simple, everyday language.
 - **GET /health**: Health check endpoint
 
 ## User Experience Flow
-1. **Landing Page**: User chooses between Pinterest board URL or natural language description
-2. **Input**: User provides Pinterest URL or describes their dream space
+1. **Landing Page**: User chooses between Pinterest board URL or natural language description with vibrant gradient cards
+2. **Input**: User provides Pinterest URL or describes their dream space with playful prompts
 3. **Curation**: Backend analyzes aesthetic, searches Marktplaats, transforms listings into "pieces"
-4. **Showroom**: Beautiful boutique-style presentation with provenance stories, hero images, and price badges
+4. **Showroom**: Bold Gen Z-style presentation with immediate price visibility (yellow badges overlaid on images), location labels, real descriptions, and tight grid layout showing more items per page
 
 ## Data Transformation
-Raw Marktplaats listings are transformed into boutique "pieces" with:
-- **Provenance stories**: "A timeless piece with character and history"
-- **Material descriptions**: Highlighting natural wood, teak, designer craftsmanship
-- **Curated presentation**: High-quality images, elegant typography, storytelling
+Raw Marktplaats listings are transformed into curated "pieces" with:
+- **Real Data**: Actual descriptions from listings (first 120 characters)
+- **Location Info**: City/region where item is located
+- **Immediate Pricing**: Bold yellow price badges overlaid on images for instant visibility
+- **Compact Layout**: Optimized grid showing more items per page (280px min-width vs previous 350px)
 
 ## Key Features
 - **Dual Input Modes**: Pinterest board URL OR natural language description
