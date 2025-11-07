@@ -264,5 +264,278 @@ def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "service": "marktplaats-scraper"}
 
+class PinterestRequest(BaseModel):
+    url: str
+
+class NaturalRequest(BaseModel):
+    description: str
+
+@app.post("/curate-pinterest")
+async def curate_pinterest(request: PinterestRequest):
+    """
+    Curate furniture from Pinterest board aesthetic
+    """
+    try:
+        from playwright.async_api import async_playwright
+        
+        pinterest_url = request.url
+        logger.info(f"Curating from Pinterest: {pinterest_url}")
+        
+        # Extract pin titles/descriptions from Pinterest
+        pins_data = []
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            page = await browser.new_page()
+            
+            try:
+                await page.goto(pinterest_url, timeout=30000)
+                await page.wait_for_timeout(3000)
+                
+                # Scroll to load more pins
+                for _ in range(3):
+                    await page.evaluate("window.scrollBy(0, window.innerHeight)")
+                    await page.wait_for_timeout(1500)
+                
+                # Extract pin data
+                pins = await page.query_selector_all('[data-test-id="pin"]')
+                logger.info(f"Found {len(pins)} pins")
+                
+                for pin in pins[:20]:
+                    try:
+                        title_el = await pin.query_selector('[data-test-id="pin-title"]')
+                        desc_el = await pin.query_selector('[data-test-id="pincard-description"]')
+                        
+                        title = await title_el.inner_text() if title_el else ""
+                        desc = await desc_el.inner_text() if desc_el else ""
+                        
+                        if title or desc:
+                            pins_data.append({
+                                "title": title,
+                                "description": desc
+                            })
+                    except:
+                        continue
+                        
+            finally:
+                await browser.close()
+        
+        logger.info(f"Extracted {len(pins_data)} pin descriptions")
+        
+        # Extract furniture keywords from pins
+        furniture_keywords = set()
+        common_furniture = ["bureau", "desk", "stoel", "chair", "tafel", "table", "kast", "cabinet", 
+                           "lamp", "rek", "shelf", "bank", "sofa", "dressoir"]
+        
+        for pin in pins_data:
+            text = f"{pin['title']} {pin['description']}".lower()
+            for keyword in common_furniture:
+                if keyword in text:
+                    furniture_keywords.add(keyword)
+        
+        # Add style keywords from pins
+        style_keywords = []
+        all_text = " ".join([f"{p['title']} {p['description']}" for p in pins_data]).lower()
+        
+        if "vintage" in all_text or "retro" in all_text:
+            style_keywords.append("vintage")
+        if "teak" in all_text or "wood" in all_text or "hout" in all_text:
+            style_keywords.append("teak")
+        if "mid century" in all_text or "jaren 60" in all_text:
+            style_keywords.append("jaren 60")
+        if "scandinavian" in all_text or "scandinavisch" in all_text:
+            style_keywords.append("scandinavisch")
+        if "minimalist" in all_text or "minimalistisch" in all_text:
+            style_keywords.append("minimalistisch")
+        
+        # Build search queries
+        search_queries = []
+        if furniture_keywords:
+            base_items = list(furniture_keywords)[:3]
+            for item in base_items:
+                if style_keywords:
+                    search_queries.append(f"{item} {style_keywords[0]}")
+                else:
+                    search_queries.append(item)
+        else:
+            search_queries = ["vintage bureau", "design stoel", "teak tafel"]
+        
+        logger.info(f"Search queries: {search_queries}")
+        
+        # Search Marktplaats
+        all_pieces = []
+        for query in search_queries[:4]:
+            try:
+                search_url = f"{BASE}/l/#{urljoin('', query.replace(' ', '-'))}"
+                search_url = f"{BASE}/l/?query={query.replace(' ', '+')}&distanceMeters=10000&postcode=1012JS"
+                
+                resp = requests.get(search_url, headers=HEADERS, timeout=10)
+                soup = BeautifulSoup(resp.content, "lxml")
+                
+                listings = soup.select(SEL["listing_card"])[:5]
+                
+                for listing in listings:
+                    title_el = listing.select_one(SEL["title"]) or listing.select_one(SEL["title_fallback"])
+                    price_el = listing.select_one(SEL["price"])
+                    img_el = listing.select_one(SEL["image"])
+                    link_el = listing.select_one("a[href*='/v/']") or listing.select_one("a[href*='/a/']")
+                    
+                    if not title_el or not link_el:
+                        continue
+                    
+                    title = title_el.get_text(strip=True)
+                    price_text = price_el.get_text(strip=True) if price_el else "Prijs op aanvraag"
+                    image_url = img_el.get("src") if img_el and img_el.has_attr("src") else None
+                    listing_url = urljoin(BASE, link_el["href"])
+                    
+                    # Generate provenance/story
+                    provenance = ""
+                    if "vintage" in title.lower() or "retro" in title.lower():
+                        provenance = "A timeless piece with character and history"
+                    elif "teak" in title.lower() or "hout" in title.lower():
+                        provenance = "Crafted from natural wood, bringing warmth to your space"
+                    elif any(year in title.lower() for year in ["jaren 50", "jaren 60", "jaren 70"]):
+                        provenance = "Mid-century design from a golden era of craftsmanship"
+                    else:
+                        provenance = "A carefully selected piece for discerning collectors"
+                    
+                    all_pieces.append({
+                        "title": title,
+                        "price": price_text,
+                        "image": image_url,
+                        "url": listing_url,
+                        "provenance": provenance,
+                        "description": f"Discovered in Amsterdam's vintage marketplace, this piece embodies the aesthetic you've curated."
+                    })
+                    
+            except Exception as e:
+                logger.error(f"Search failed for '{query}': {e}")
+                continue
+        
+        # Create curated response
+        style_desc = "minimalist Scandinavian aesthetic" if "scandinavisch" in style_keywords else "vintage design aesthetic"
+        
+        return {
+            "title": "Your Curated Collection",
+            "description": f"We've analyzed your Pinterest board and found {len(all_pieces)} exceptional pieces that match your {style_desc}.",
+            "pieces": all_pieces[:12]
+        }
+        
+    except Exception as e:
+        logger.error(f"Pinterest curation failed: {e}")
+        return {"error": "Failed to curate from Pinterest", "details": str(e)}
+
+@app.post("/curate-natural")
+async def curate_natural(request: NaturalRequest):
+    """
+    Curate furniture from natural language description
+    """
+    try:
+        description = request.description.lower()
+        logger.info(f"Curating from description: {description[:100]}...")
+        
+        # Extract furniture types
+        furniture_map = {
+            "desk": "bureau", "bureau": "bureau",
+            "chair": "stoel", "stoel": "stoel",
+            "table": "tafel", "tafel": "tafel",
+            "cabinet": "kast", "kast": "kast",
+            "shelf": "rek", "shelving": "rek", "rek": "rek",
+            "sofa": "bank", "couch": "bank", "bank": "bank",
+            "lamp": "lamp", "lighting": "lamp",
+            "dresser": "dressoir", "dressoir": "dressoir"
+        }
+        
+        furniture_items = []
+        for eng, nl in furniture_map.items():
+            if eng in description:
+                furniture_items.append(nl)
+        
+        if not furniture_items:
+            furniture_items = ["meubels"]
+        
+        # Extract style keywords
+        style_keywords = []
+        if any(word in description for word in ["vintage", "retro", "antique"]):
+            style_keywords.append("vintage")
+        if any(word in description for word in ["scandinavian", "scandinavisch", "nordic"]):
+            style_keywords.append("scandinavisch")
+        if any(word in description for word in ["mid century", "mid-century", "jaren 60"]):
+            style_keywords.append("jaren 60")
+        if any(word in description for word in ["minimalist", "minimal", "clean"]):
+            style_keywords.append("minimalistisch")
+        if any(word in description for word in ["wood", "wooden", "teak", "oak"]):
+            style_keywords.append("hout")
+        if any(word in description for word in ["industrial", "industrieel"]):
+            style_keywords.append("industrieel")
+        
+        # Build search queries
+        search_queries = []
+        for item in furniture_items[:3]:
+            if style_keywords:
+                search_queries.append(f"{item} {style_keywords[0]}")
+            else:
+                search_queries.append(item)
+        
+        logger.info(f"Search queries: {search_queries}")
+        
+        # Search Marktplaats
+        all_pieces = []
+        for query in search_queries[:5]:
+            try:
+                search_url = f"{BASE}/l/?query={query.replace(' ', '+')}&distanceMeters=10000&postcode=1012JS"
+                
+                resp = requests.get(search_url, headers=HEADERS, timeout=10)
+                soup = BeautifulSoup(resp.content, "lxml")
+                
+                listings = soup.select(SEL["listing_card"])[:6]
+                
+                for listing in listings:
+                    title_el = listing.select_one(SEL["title"]) or listing.select_one(SEL["title_fallback"])
+                    price_el = listing.select_one(SEL["price"])
+                    img_el = listing.select_one(SEL["image"])
+                    link_el = listing.select_one("a[href*='/v/']") or listing.select_one("a[href*='/a/']")
+                    
+                    if not title_el or not link_el:
+                        continue
+                    
+                    title = title_el.get_text(strip=True)
+                    price_text = price_el.get_text(strip=True) if price_el else "Prijs op aanvraag"
+                    image_url = img_el.get("src") if img_el and img_el.has_attr("src") else None
+                    listing_url = urljoin(BASE, link_el["href"])
+                    
+                    # Generate boutique-style description
+                    provenance = ""
+                    if "vintage" in title.lower():
+                        provenance = "A treasured vintage piece with authentic patina"
+                    elif "design" in title.lower():
+                        provenance = "Designer craftsmanship meets timeless elegance"
+                    elif any(wood in title.lower() for wood in ["teak", "eiken", "oak"]):
+                        provenance = "Natural materials showcase expert woodworking"
+                    else:
+                        provenance = "Carefully curated for your unique vision"
+                    
+                    all_pieces.append({
+                        "title": title,
+                        "price": price_text,
+                        "image": image_url,
+                        "url": listing_url,
+                        "provenance": provenance,
+                        "description": "This piece aligns beautifully with the aesthetic you've described."
+                    })
+                    
+            except Exception as e:
+                logger.error(f"Search failed for '{query}': {e}")
+                continue
+        
+        return {
+            "title": "Your Personalized Collection",
+            "description": f"Based on your vision, we've curated {len(all_pieces)} exceptional pieces that bring your dream space to life.",
+            "pieces": all_pieces[:12]
+        }
+        
+    except Exception as e:
+        logger.error(f"Natural language curation failed: {e}")
+        return {"error": "Failed to curate collection", "details": str(e)}
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
