@@ -266,9 +266,11 @@ def health_check():
 
 class PinterestRequest(BaseModel):
     url: str
+    city: Optional[str] = "amsterdam"
 
 class NaturalRequest(BaseModel):
     description: str
+    city: Optional[str] = "amsterdam"
 
 @app.post("/curate-pinterest")
 async def curate_pinterest(request: PinterestRequest):
@@ -318,9 +320,24 @@ async def curate_pinterest(request: PinterestRequest):
         
         # Search Marktplaats
         all_pieces = []
+        # Map cities to postal codes for location filtering
+        city_postcodes = {
+            "amsterdam": "1012AB",
+            "rotterdam": "3011AD",
+            "den-haag": "2511AA",
+            "utrecht": "3511AA",
+            "eindhoven": "5611AA",
+            "groningen": "9711AA",
+            "tilburg": "5011AA",
+            "almere": "1311AA"
+        }
+        postcode = city_postcodes.get(request.city, "1012AB")
+        
         for query in search_queries[:4]:
             try:
-                search_url = f"{BASE}/q/{query}/"
+                # Marktplaats URL format: /z.html with postcode and distance filter
+                search_url = f"{BASE}/z.html?query={query}&postcode={postcode}&distanceMeters=10000"
+                logger.info(f"Searching {request.city} ({postcode}): {search_url}")
                 
                 resp = requests.get(search_url, headers=HEADERS, timeout=10)
                 soup = BeautifulSoup(resp.content, "lxml")
@@ -434,9 +451,24 @@ async def curate_natural(request: NaturalRequest):
         
         # Search Marktplaats
         all_pieces = []
+        # Map cities to postal codes for location filtering
+        city_postcodes = {
+            "amsterdam": "1012AB",
+            "rotterdam": "3011AD",
+            "den-haag": "2511AA",
+            "utrecht": "3511AA",
+            "eindhoven": "5611AA",
+            "groningen": "9711AA",
+            "tilburg": "5011AA",
+            "almere": "1311AA"
+        }
+        postcode = city_postcodes.get(request.city, "1012AB")
+        
         for query in search_queries[:5]:
             try:
-                search_url = f"{BASE}/q/{query}/"
+                # Marktplaats URL format: /z.html with postcode and distance filter
+                search_url = f"{BASE}/z.html?query={query}&postcode={postcode}&distanceMeters=10000"
+                logger.info(f"Searching {request.city} ({postcode}): {search_url}")
                 
                 resp = requests.get(search_url, headers=HEADERS, timeout=10)
                 soup = BeautifulSoup(resp.content, "lxml")

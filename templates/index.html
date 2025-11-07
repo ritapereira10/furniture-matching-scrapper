@@ -522,6 +522,18 @@
             placeholder="https://www.pinterest.com/username/board-name/"
         >
         
+        <label for="pinterest-city" style="display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 700; font-size: 0.9rem;">📍 Search in city:</label>
+        <select id="pinterest-city" class="input-field">
+            <option value="amsterdam">Amsterdam</option>
+            <option value="rotterdam">Rotterdam</option>
+            <option value="den-haag">Den Haag</option>
+            <option value="utrecht">Utrecht</option>
+            <option value="eindhoven">Eindhoven</option>
+            <option value="groningen">Groningen</option>
+            <option value="tilburg">Tilburg</option>
+            <option value="almere">Almere</option>
+        </select>
+        
         <button class="submit-button chunky" onclick="curateFromPinterest()">Let's Go 🚀</button>
         
         <div class="error" id="pinterest-error"></div>
@@ -541,6 +553,18 @@
             id="natural-description"
             placeholder="looking for a cozy minimalist setup with natural wood vibes, clean lines, scandi aesthetic. need a desk, comfy chair, maybe some storage..."
         ></textarea>
+        
+        <label for="natural-city" style="display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 700; font-size: 0.9rem;">📍 Search in city:</label>
+        <select id="natural-city" class="input-field">
+            <option value="amsterdam">Amsterdam</option>
+            <option value="rotterdam">Rotterdam</option>
+            <option value="den-haag">Den Haag</option>
+            <option value="utrecht">Utrecht</option>
+            <option value="eindhoven">Eindhoven</option>
+            <option value="groningen">Groningen</option>
+            <option value="tilburg">Tilburg</option>
+            <option value="almere">Almere</option>
+        </select>
         
         <button class="submit-button chunky" onclick="curateFromNatural()">Let's Go 🚀</button>
         
@@ -565,6 +589,13 @@
                 <span class="step-text chunky">curating pieces...</span>
             </div>
         </div>
+    </div>
+    
+    <!-- Success Screen -->
+    <div class="loading" id="success" style="display: none;">
+        <div style="font-size: 5rem; margin-bottom: 1rem;">✨</div>
+        <p class="loading-text chunky" style="color: var(--dark-green); font-size: 2rem;">Found Your Perfect Pieces!</p>
+        <p style="margin-top: 1rem; font-size: 1.1rem; color: var(--black);">Scroll down to see your curated collection</p>
     </div>
     
     <!-- Showroom -->
@@ -599,6 +630,7 @@
         
         async function curateFromPinterest() {
             const url = document.getElementById('pinterest-url').value.trim();
+            const city = document.getElementById('pinterest-city').value;
             const errorDiv = document.getElementById('pinterest-error');
             
             if (!url) {
@@ -614,7 +646,7 @@
                 const response = await fetch('/curate-pinterest', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url })
+                    body: JSON.stringify({ url, city })
                 });
                 
                 if (!response.ok) throw new Error('Failed to curate collection');
@@ -643,6 +675,7 @@
         
         async function curateFromNatural() {
             const description = document.getElementById('natural-description').value.trim();
+            const city = document.getElementById('natural-city').value;
             const errorDiv = document.getElementById('natural-error');
             
             if (!description) {
@@ -658,7 +691,7 @@
                 const response = await fetch('/curate-natural', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ description })
+                    body: JSON.stringify({ description, city })
                 });
                 
                 if (!response.ok) throw new Error('Failed to curate collection');
@@ -703,31 +736,42 @@
         function displayCollection(data) {
             hideLoading();
             
-            document.getElementById('collection-title').textContent = data.title || 'YOUR CURATED COLLECTION';
-            document.getElementById('collection-description').textContent = data.description || '';
+            // Show success screen first
+            document.getElementById('success').style.display = 'flex';
             
-            const collectionDiv = document.getElementById('collection');
-            collectionDiv.innerHTML = '';
-            
-            data.pieces.forEach(piece => {
-                const pieceEl = document.createElement('div');
-                pieceEl.className = 'piece';
-                pieceEl.innerHTML = `
-                    <div class="piece-image-wrapper">
-                        ${piece.image ? `<img src="${piece.image}" alt="${piece.title}" class="piece-image" onerror="this.style.display='none'">` : ''}
-                        <div class="price-badge">${piece.price}</div>
-                    </div>
-                    <div class="piece-content">
-                        <h3 class="piece-title chunky">${piece.title}</h3>
-                        ${piece.location ? `<p class="piece-location">${piece.location}</p>` : ''}
-                        ${piece.description ? `<p class="piece-description">${piece.description}</p>` : ''}
-                        <a href="${piece.url}" target="_blank" class="piece-action chunky">View Item 👀</a>
-                    </div>
-                `;
-                collectionDiv.appendChild(pieceEl);
-            });
-            
-            document.getElementById('showroom').classList.add('active');
+            // After 2 seconds, hide success and show collection
+            setTimeout(() => {
+                document.getElementById('success').style.display = 'none';
+                
+                document.getElementById('collection-title').textContent = data.title || 'YOUR CURATED COLLECTION';
+                document.getElementById('collection-description').textContent = data.description || '';
+                
+                const collectionDiv = document.getElementById('collection');
+                collectionDiv.innerHTML = '';
+                
+                data.pieces.forEach(piece => {
+                    const pieceEl = document.createElement('div');
+                    pieceEl.className = 'piece';
+                    pieceEl.innerHTML = `
+                        <div class="piece-image-wrapper">
+                            ${piece.image ? `<img src="${piece.image}" alt="${piece.title}" class="piece-image" onerror="this.style.display='none'">` : ''}
+                            <div class="price-badge">${piece.price}</div>
+                        </div>
+                        <div class="piece-content">
+                            <h3 class="piece-title chunky">${piece.title}</h3>
+                            ${piece.location ? `<p class="piece-location">${piece.location}</p>` : ''}
+                            ${piece.description ? `<p class="piece-description">${piece.description}</p>` : ''}
+                            <a href="${piece.url}" target="_blank" class="piece-action chunky">View Item 👀</a>
+                        </div>
+                    `;
+                    collectionDiv.appendChild(pieceEl);
+                });
+                
+                document.getElementById('showroom').classList.add('active');
+                
+                // Scroll to showroom smoothly
+                document.getElementById('showroom').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 2000);
         }
     </script>
 </body>
