@@ -481,48 +481,91 @@
         .error.active {
             display: block;
         }
+        
+        /* Language Selector */
+        .lang-selector {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 1000;
+        }
+        
+        .lang-select {
+            padding: 0.6rem 1rem;
+            border: 2px solid var(--black);
+            border-radius: 50px;
+            background: var(--white);
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 var(--black);
+            transition: all 0.2s ease;
+        }
+        
+        .lang-select:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0 var(--black);
+        }
+        
+        .lang-select:focus {
+            outline: none;
+            border-color: var(--bright-red);
+        }
     </style>
 </head>
 <body>
+    <!-- Language Selector -->
+    <div class="lang-selector">
+        <select id="language-select" class="lang-select" onchange="changeLanguage(this.value)">
+            <option value="en">🇬🇧 EN</option>
+            <option value="nl">🇳🇱 NL</option>
+            <option value="pt">🇵🇹 PT</option>
+            <option value="de">🇩🇪 DE</option>
+            <option value="fr">🇫🇷 FR</option>
+        </select>
+    </div>
+    
     <!-- Landing Page -->
     <div class="landing" id="landing">
         <div class="landing-header">
             <h1 class="landing-title chunky">ATELIER</h1>
-            <p class="landing-subtitle">find your vibe ✨ curated vintage furniture that slaps</p>
+            <p class="landing-subtitle" data-i18n="landing-subtitle">find your vibe ✨ curated vintage furniture that slaps</p>
         </div>
         
         <div class="entry-cards">
             <div class="entry-card" onclick="showInput('pinterest')">
                 <div class="entry-icon">📌</div>
-                <h2 class="entry-title chunky">Pinterest Board</h2>
-                <p class="entry-description">drop your moodboard link & we'll find pieces that match your aesthetic</p>
+                <h2 class="entry-title chunky" data-i18n="card-pinterest-title">Pinterest Board</h2>
+                <p class="entry-description" data-i18n="card-pinterest-desc">drop your moodboard link & we'll find pieces that match your aesthetic</p>
             </div>
             
             <div class="entry-card" onclick="showInput('natural')">
                 <div class="entry-icon">✨</div>
-                <h2 class="entry-title chunky">Describe It</h2>
-                <p class="entry-description">tell us your vibe & we'll curate the perfect collection for you</p>
+                <h2 class="entry-title chunky" data-i18n="card-describe-title">Describe It</h2>
+                <p class="entry-description" data-i18n="card-describe-desc">tell us your vibe & we'll curate the perfect collection for you</p>
             </div>
         </div>
     </div>
     
     <!-- Pinterest Input -->
     <div class="input-section" id="pinterest-input">
-        <button class="back-button" onclick="showLanding()">← BACK</button>
+        <button class="back-button" onclick="showLanding()" data-i18n="btn-back">← BACK</button>
         
         <div class="input-header">
-            <h2 class="input-title chunky">Drop Your Pinterest Board</h2>
-            <p class="input-subtitle">paste the link below</p>
+            <h2 class="input-title chunky" data-i18n="pinterest-title">Drop Your Pinterest Board</h2>
+            <p class="input-subtitle" data-i18n="pinterest-subtitle">paste the link below</p>
         </div>
         
         <input 
             type="text" 
             class="input-field" 
             id="pinterest-url"
+            data-i18n-placeholder="pinterest-placeholder"
             placeholder="https://www.pinterest.com/username/board-name/"
         >
         
-        <label for="pinterest-city" style="display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 700; font-size: 0.9rem;">📍 Search in city:</label>
+        <label for="pinterest-city" style="display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 700; font-size: 0.9rem;" data-i18n="city-label">📍 Search in city:</label>
         <select id="pinterest-city" class="input-field">
             <option value="amsterdam">Amsterdam</option>
             <option value="rotterdam">Rotterdam</option>
@@ -534,27 +577,28 @@
             <option value="almere">Almere</option>
         </select>
         
-        <button class="submit-button chunky" onclick="curateFromPinterest()">Let's Go 🚀</button>
+        <button class="submit-button chunky" onclick="curateFromPinterest()" data-i18n="btn-letsgo">Let's Go 🚀</button>
         
         <div class="error" id="pinterest-error"></div>
     </div>
     
     <!-- Natural Language Input -->
     <div class="input-section" id="natural-input">
-        <button class="back-button" onclick="showLanding()">← BACK</button>
+        <button class="back-button" onclick="showLanding()" data-i18n="btn-back">← BACK</button>
         
         <div class="input-header">
-            <h2 class="input-title chunky">What's Your Vibe?</h2>
-            <p class="input-subtitle">describe your dream space</p>
+            <h2 class="input-title chunky" data-i18n="natural-title">What's Your Vibe?</h2>
+            <p class="input-subtitle" data-i18n="natural-subtitle">describe your dream space</p>
         </div>
         
         <textarea 
             class="input-field" 
             id="natural-description"
+            data-i18n-placeholder="natural-placeholder"
             placeholder="looking for a cozy minimalist setup with natural wood vibes, clean lines, scandi aesthetic. need a desk, comfy chair, maybe some storage..."
         ></textarea>
         
-        <label for="natural-city" style="display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 700; font-size: 0.9rem;">📍 Search in city:</label>
+        <label for="natural-city" style="display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 700; font-size: 0.9rem;" data-i18n="city-label">📍 Search in city:</label>
         <select id="natural-city" class="input-field">
             <option value="amsterdam">Amsterdam</option>
             <option value="rotterdam">Rotterdam</option>
@@ -574,19 +618,19 @@
     <!-- Loading State -->
     <div class="loading" id="loading">
         <div class="loading-spinner"></div>
-        <p class="loading-text chunky">Curating Your Collection...</p>
+        <p class="loading-text chunky" data-i18n="loading-title">Curating Your Collection...</p>
         <div class="loading-steps" id="loading-steps">
             <div class="loading-step" id="step-1">
                 <span class="step-icon">🔍</span>
-                <span class="step-text chunky">analyzing your vibe...</span>
+                <span class="step-text chunky" data-i18n="loading-step1">analyzing your vibe...</span>
             </div>
             <div class="loading-step" id="step-2">
                 <span class="step-icon">✨</span>
-                <span class="step-text chunky">searching marketplace...</span>
+                <span class="step-text chunky" data-i18n="loading-step2">searching marketplace...</span>
             </div>
             <div class="loading-step" id="step-3">
                 <span class="step-icon">🎨</span>
-                <span class="step-text chunky">curating pieces...</span>
+                <span class="step-text chunky" data-i18n="loading-step3">curating pieces...</span>
             </div>
         </div>
     </div>
@@ -594,13 +638,13 @@
     <!-- Success Screen -->
     <div class="loading" id="success" style="display: none;">
         <div style="font-size: 5rem; margin-bottom: 1rem;">✨</div>
-        <p class="loading-text chunky" style="color: var(--dark-green); font-size: 2rem;">Found Your Perfect Pieces!</p>
-        <p style="margin-top: 1rem; font-size: 1.1rem; color: var(--black);">Scroll down to see your curated collection</p>
+        <p class="loading-text chunky" style="color: var(--dark-green); font-size: 2rem;" data-i18n="success-title">Found Your Perfect Pieces!</p>
+        <p style="margin-top: 1rem; font-size: 1.1rem; color: var(--black);" data-i18n="success-subtitle">Scroll down to see your curated collection</p>
     </div>
     
     <!-- Showroom -->
     <div class="showroom" id="showroom">
-        <button class="back-button" onclick="showLanding()">← START OVER</button>
+        <button class="back-button" onclick="showLanding()" data-i18n="btn-start-over">← START OVER</button>
         
         <div class="showroom-header">
             <h2 class="showroom-title chunky" id="collection-title">YOUR CURATED COLLECTION</h2>
@@ -611,6 +655,182 @@
     </div>
     
     <script>
+        // Translations
+        const translations = {
+            en: {
+                "landing-subtitle": "find your vibe ✨ curated vintage furniture that slaps",
+                "card-pinterest-title": "Pinterest Board",
+                "card-pinterest-desc": "drop your moodboard link & we'll find pieces that match your aesthetic",
+                "card-describe-title": "Describe It",
+                "card-describe-desc": "tell us your vibe & we'll curate the perfect collection for you",
+                "btn-back": "← BACK",
+                "pinterest-title": "Drop Your Pinterest Board",
+                "pinterest-subtitle": "paste the link below",
+                "pinterest-placeholder": "https://www.pinterest.com/username/board-name/",
+                "natural-title": "What's Your Vibe?",
+                "natural-subtitle": "describe your dream space",
+                "natural-placeholder": "looking for a cozy minimalist setup with natural wood vibes, clean lines, scandi aesthetic. need a desk, comfy chair, maybe some storage...",
+                "city-label": "📍 Search in city:",
+                "btn-letsgo": "Let's Go 🚀",
+                "btn-start-over": "← START OVER",
+                "loading-title": "Curating Your Collection...",
+                "loading-step1": "analyzing your vibe...",
+                "loading-step2": "searching marketplace...",
+                "loading-step3": "curating pieces...",
+                "success-title": "Found Your Perfect Pieces!",
+                "success-subtitle": "Scroll down to see your curated collection",
+                "error-pinterest-empty": "Please enter a Pinterest board URL",
+                "error-natural-empty": "Please describe your dream space",
+                "error-pinterest-unavailable": "Pinterest curation is temporarily unavailable. Please try describing your dream space instead.",
+                "error-curate-failed": "Failed to curate collection. Please try again.",
+                "error-generic": "Something went wrong. Please try again."
+            },
+            nl: {
+                "landing-subtitle": "vind je vibe ✨ vintage meubels die echt kloppen",
+                "card-pinterest-title": "Pinterest Bord",
+                "card-pinterest-desc": "deel je moodboard link & we vinden stukken die bij je esthetiek passen",
+                "card-describe-title": "Beschrijf Het",
+                "card-describe-desc": "vertel ons je vibe & we cureren de perfecte collectie voor jou",
+                "btn-back": "← TERUG",
+                "pinterest-title": "Deel Je Pinterest Bord",
+                "pinterest-subtitle": "plak de link hieronder",
+                "pinterest-placeholder": "https://www.pinterest.com/gebruikersnaam/bord-naam/",
+                "natural-title": "Wat Is Jouw Vibe?",
+                "natural-subtitle": "beschrijf je droomruimte",
+                "natural-placeholder": "op zoek naar een gezellige minimalistische setup met natuurlijke houtvibes, strakke lijnen, scandi esthetiek. heb een bureau, comfortabele stoel nodig, misschien wat opbergruimte...",
+                "city-label": "📍 Zoek in stad:",
+                "btn-letsgo": "Let's Go 🚀",
+                "btn-start-over": "← OPNIEUW BEGINNEN",
+                "loading-title": "Je Collectie Cureren...",
+                "loading-step1": "je vibe analyseren...",
+                "loading-step2": "marktplaats doorzoeken...",
+                "loading-step3": "stukken cureren...",
+                "success-title": "Je Perfecte Stukken Gevonden!",
+                "success-subtitle": "Scroll naar beneden om je gecureerde collectie te zien",
+                "error-pinterest-empty": "Voer een Pinterest bord URL in",
+                "error-natural-empty": "Beschrijf je droomruimte",
+                "error-pinterest-unavailable": "Pinterest curatie is tijdelijk niet beschikbaar. Probeer je droomruimte te beschrijven.",
+                "error-curate-failed": "Collectie cureren mislukt. Probeer het opnieuw.",
+                "error-generic": "Er is iets misgegaan. Probeer het opnieuw."
+            },
+            pt: {
+                "landing-subtitle": "encontre sua vibe ✨ móveis vintage curados que arrasam",
+                "card-pinterest-title": "Quadro Pinterest",
+                "card-pinterest-desc": "compartilhe o link do seu moodboard & encontraremos peças que combinam com sua estética",
+                "card-describe-title": "Descreva",
+                "card-describe-desc": "conte-nos sua vibe & vamos curar a coleção perfeita para você",
+                "btn-back": "← VOLTAR",
+                "pinterest-title": "Compartilhe Seu Quadro Pinterest",
+                "pinterest-subtitle": "cole o link abaixo",
+                "pinterest-placeholder": "https://www.pinterest.com/usuario/nome-do-quadro/",
+                "natural-title": "Qual É Sua Vibe?",
+                "natural-subtitle": "descreva seu espaço dos sonhos",
+                "natural-placeholder": "procurando um setup minimalista aconchegante com vibes de madeira natural, linhas limpas, estética scandi. preciso de mesa, cadeira confortável, talvez algum armazenamento...",
+                "city-label": "📍 Buscar na cidade:",
+                "btn-letsgo": "Vamos Lá 🚀",
+                "btn-start-over": "← RECOMEÇAR",
+                "loading-title": "Curando Sua Coleção...",
+                "loading-step1": "analisando sua vibe...",
+                "loading-step2": "buscando no marketplace...",
+                "loading-step3": "curando peças...",
+                "success-title": "Encontramos Suas Peças Perfeitas!",
+                "success-subtitle": "Role para baixo para ver sua coleção curada",
+                "error-pinterest-empty": "Por favor, insira uma URL do quadro Pinterest",
+                "error-natural-empty": "Por favor, descreva seu espaço dos sonhos",
+                "error-pinterest-unavailable": "Curadoria do Pinterest está temporariamente indisponível. Por favor, tente descrever seu espaço dos sonhos.",
+                "error-curate-failed": "Falha ao curar coleção. Por favor, tente novamente.",
+                "error-generic": "Algo deu errado. Por favor, tente novamente."
+            },
+            de: {
+                "landing-subtitle": "finde deinen vibe ✨ kuratierte vintage möbel die rocken",
+                "card-pinterest-title": "Pinterest Board",
+                "card-pinterest-desc": "teile deinen moodboard-link & wir finden stücke die zu deiner ästhetik passen",
+                "card-describe-title": "Beschreibe Es",
+                "card-describe-desc": "erzähl uns deinen vibe & wir kuratieren die perfekte kollektion für dich",
+                "btn-back": "← ZURÜCK",
+                "pinterest-title": "Teile Dein Pinterest Board",
+                "pinterest-subtitle": "füge den link unten ein",
+                "pinterest-placeholder": "https://www.pinterest.com/benutzername/board-name/",
+                "natural-title": "Was Ist Dein Vibe?",
+                "natural-subtitle": "beschreibe deinen traumraum",
+                "natural-placeholder": "suche ein gemütliches minimalistisches setup mit natürlichen holzvibes, klaren linien, scandi-ästhetik. brauche schreibtisch, bequemen stuhl, vielleicht etwas stauraum...",
+                "city-label": "📍 Suche in Stadt:",
+                "btn-letsgo": "Los Geht's 🚀",
+                "btn-start-over": "← VON VORNE BEGINNEN",
+                "loading-title": "Deine Kollektion Kuratieren...",
+                "loading-step1": "deinen vibe analysieren...",
+                "loading-step2": "marketplace durchsuchen...",
+                "loading-step3": "stücke kuratieren...",
+                "success-title": "Deine Perfekten Stücke Gefunden!",
+                "success-subtitle": "Scrolle nach unten um deine kuratierte kollektion zu sehen",
+                "error-pinterest-empty": "Bitte gib eine Pinterest Board URL ein",
+                "error-natural-empty": "Bitte beschreibe deinen traumraum",
+                "error-pinterest-unavailable": "Pinterest-Kuration ist vorübergehend nicht verfügbar. Bitte versuche, deinen Traumraum zu beschreiben.",
+                "error-curate-failed": "Kollektion kuratieren fehlgeschlagen. Bitte versuche es erneut.",
+                "error-generic": "Etwas ist schief gelaufen. Bitte versuche es erneut."
+            },
+            fr: {
+                "landing-subtitle": "trouve ta vibe ✨ meubles vintage curés qui déchirent",
+                "card-pinterest-title": "Tableau Pinterest",
+                "card-pinterest-desc": "partage le lien de ton moodboard & on trouvera des pièces qui matchent ton esthétique",
+                "card-describe-title": "Décris-le",
+                "card-describe-desc": "dis-nous ta vibe & on va curer la collection parfaite pour toi",
+                "btn-back": "← RETOUR",
+                "pinterest-title": "Partage Ton Tableau Pinterest",
+                "pinterest-subtitle": "colle le lien ci-dessous",
+                "pinterest-placeholder": "https://www.pinterest.com/utilisateur/nom-du-tableau/",
+                "natural-title": "C'est Quoi Ta Vibe?",
+                "natural-subtitle": "décris ton espace de rêve",
+                "natural-placeholder": "je cherche un setup minimaliste cosy avec des vibes bois naturel, lignes épurées, esthétique scandi. besoin d'un bureau, chaise confortable, peut-être du rangement...",
+                "city-label": "📍 Rechercher dans la ville:",
+                "btn-letsgo": "C'est Parti 🚀",
+                "btn-start-over": "← RECOMMENCER",
+                "loading-title": "Curation De Ta Collection...",
+                "loading-step1": "analyse de ta vibe...",
+                "loading-step2": "recherche sur marketplace...",
+                "loading-step3": "curation des pièces...",
+                "success-title": "Tes Pièces Parfaites Trouvées!",
+                "success-subtitle": "Scrolle pour voir ta collection curée",
+                "error-pinterest-empty": "S'il te plaît, entre une URL de tableau Pinterest",
+                "error-natural-empty": "S'il te plaît, décris ton espace de rêve",
+                "error-pinterest-unavailable": "La curation Pinterest est temporairement indisponible. Essaie de décrire ton espace de rêve.",
+                "error-curate-failed": "Échec de la curation de la collection. Réessaye.",
+                "error-generic": "Quelque chose s'est mal passé. Réessaye."
+            }
+        };
+
+        // Helper function to get translated text
+        function t(key) {
+            const lang = localStorage.getItem('preferredLanguage') || 'en';
+            return translations[lang] && translations[lang][key] ? translations[lang][key] : translations['en'][key];
+        }
+
+        // Language switching function
+        function changeLanguage(lang) {
+            localStorage.setItem('preferredLanguage', lang);
+            document.querySelectorAll('[data-i18n]').forEach(elem => {
+                const key = elem.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    elem.textContent = translations[lang][key];
+                }
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(elem => {
+                const key = elem.getAttribute('data-i18n-placeholder');
+                if (translations[lang] && translations[lang][key]) {
+                    elem.placeholder = translations[lang][key];
+                }
+            });
+        }
+
+        // Initialize language on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedLang = localStorage.getItem('preferredLanguage') || 'en';
+            document.getElementById('language-select').value = savedLang;
+            if (savedLang !== 'en') {
+                changeLanguage(savedLang);
+            }
+        });
+
         function showLanding() {
             document.getElementById('landing').style.display = 'flex';
             document.getElementById('pinterest-input').classList.remove('active');
@@ -634,7 +854,7 @@
             const errorDiv = document.getElementById('pinterest-error');
             
             if (!url) {
-                errorDiv.textContent = 'Please enter a Pinterest board URL';
+                errorDiv.textContent = t('error-pinterest-empty');
                 errorDiv.classList.add('active');
                 return;
             }
@@ -649,13 +869,13 @@
                     body: JSON.stringify({ url, city })
                 });
                 
-                if (!response.ok) throw new Error('Failed to curate collection');
+                if (!response.ok) throw new Error(t('error-curate-failed'));
                 
                 const data = await response.json();
                 
                 if (data.error === 'playwright_unavailable') {
                     hideLoading();
-                    errorDiv.textContent = 'Pinterest curation is temporarily unavailable. Please try describing your dream space instead.';
+                    errorDiv.textContent = t('error-pinterest-unavailable');
                     errorDiv.classList.add('active');
                     setTimeout(() => {
                         document.getElementById('pinterest-input').classList.remove('active');
@@ -667,7 +887,7 @@
                 displayCollection(data);
             } catch (error) {
                 hideLoading();
-                errorDiv.textContent = 'Something went wrong. Please try again.';
+                errorDiv.textContent = t('error-generic');
                 errorDiv.classList.add('active');
                 console.error(error);
             }
@@ -679,7 +899,7 @@
             const errorDiv = document.getElementById('natural-error');
             
             if (!description) {
-                errorDiv.textContent = 'Please describe your dream space';
+                errorDiv.textContent = t('error-natural-empty');
                 errorDiv.classList.add('active');
                 return;
             }
@@ -694,13 +914,13 @@
                     body: JSON.stringify({ description, city })
                 });
                 
-                if (!response.ok) throw new Error('Failed to curate collection');
+                if (!response.ok) throw new Error(t('error-curate-failed'));
                 
                 const data = await response.json();
                 displayCollection(data);
             } catch (error) {
                 hideLoading();
-                errorDiv.textContent = 'Something went wrong. Please try again.';
+                errorDiv.textContent = t('error-generic');
                 errorDiv.classList.add('active');
                 console.error(error);
             }

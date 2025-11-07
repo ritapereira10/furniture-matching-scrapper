@@ -336,10 +336,15 @@ async def curate_pinterest(request: PinterestRequest):
         for query in search_queries[:4]:
             try:
                 # Marktplaats URL format: /z.html with postcode and distance filter
-                search_url = f"{BASE}/z.html?query={query}&postcode={postcode}&distanceMeters=10000"
-                logger.info(f"Searching {request.city} ({postcode}): {search_url}")
+                search_url = f"{BASE}/z.html"
+                params = {
+                    "query": query,
+                    "postcode": postcode,
+                    "distanceMeters": 10000
+                }
+                logger.info(f"Searching {request.city} ({postcode}): {query}")
                 
-                resp = requests.get(search_url, headers=HEADERS, timeout=10)
+                resp = requests.get(search_url, params=params, headers=HEADERS, timeout=10)
                 soup = BeautifulSoup(resp.content, "lxml")
                 
                 listings = soup.select(SEL["card"])[:5]
@@ -467,10 +472,15 @@ async def curate_natural(request: NaturalRequest):
         for query in search_queries[:5]:
             try:
                 # Marktplaats URL format: /z.html with postcode and distance filter
-                search_url = f"{BASE}/z.html?query={query}&postcode={postcode}&distanceMeters=10000"
-                logger.info(f"Searching {request.city} ({postcode}): {search_url}")
+                search_url = f"{BASE}/z.html"
+                params = {
+                    "query": query,
+                    "postcode": postcode,
+                    "distanceMeters": 10000
+                }
+                logger.info(f"Searching {request.city} ({postcode}): {query}")
                 
-                resp = requests.get(search_url, headers=HEADERS, timeout=10)
+                resp = requests.get(search_url, params=params, headers=HEADERS, timeout=10)
                 soup = BeautifulSoup(resp.content, "lxml")
                 
                 listings = soup.select(SEL["card"])[:6]
