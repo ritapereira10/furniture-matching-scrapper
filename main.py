@@ -339,6 +339,8 @@ async def curate_pinterest(request: PinterestRequest):
                     price_el = listing.select_one(SEL["price"])
                     img_el = listing.select_one(SEL["image"])
                     link_el = listing.select_one(SEL["link"])
+                    loc_el = listing.select_one(SEL["location"])
+                    desc_el = listing.select_one(SEL["desc"])
                     
                     if not title_el or not link_el:
                         continue
@@ -347,25 +349,16 @@ async def curate_pinterest(request: PinterestRequest):
                     price_text = price_el.get_text(strip=True) if price_el else "Prijs op aanvraag"
                     image_url = img_el.get("src") if img_el and img_el.has_attr("src") else None
                     listing_url = urljoin(BASE, link_el["href"])
-                    
-                    # Generate provenance/story
-                    provenance = ""
-                    if "vintage" in title.lower() or "retro" in title.lower():
-                        provenance = "A timeless piece with character and history"
-                    elif "teak" in title.lower() or "hout" in title.lower():
-                        provenance = "Crafted from natural wood, bringing warmth to your space"
-                    elif any(year in title.lower() for year in ["jaren 50", "jaren 60", "jaren 70"]):
-                        provenance = "Mid-century design from a golden era of craftsmanship"
-                    else:
-                        provenance = "A carefully selected piece for discerning collectors"
+                    location = loc_el.get_text(strip=True) if loc_el else "Amsterdam"
+                    description = desc_el.get_text(strip=True)[:120] if desc_el else "Vintage find from Amsterdam's marketplace"
                     
                     all_pieces.append({
                         "title": title,
                         "price": price_text,
                         "image": image_url,
                         "url": listing_url,
-                        "provenance": provenance,
-                        "description": f"Discovered in Amsterdam's vintage marketplace, this piece embodies the aesthetic you've curated."
+                        "location": location,
+                        "description": description
                     })
                     
             except Exception as e:
@@ -462,6 +455,8 @@ async def curate_natural(request: NaturalRequest):
                     price_el = listing.select_one(SEL["price"])
                     img_el = listing.select_one(SEL["image"])
                     link_el = listing.select_one(SEL["link"])
+                    loc_el = listing.select_one(SEL["location"])
+                    desc_el = listing.select_one(SEL["desc"])
                     
                     if not title_el or not link_el:
                         continue
@@ -470,25 +465,16 @@ async def curate_natural(request: NaturalRequest):
                     price_text = price_el.get_text(strip=True) if price_el else "Prijs op aanvraag"
                     image_url = img_el.get("src") if img_el and img_el.has_attr("src") else None
                     listing_url = urljoin(BASE, link_el["href"])
-                    
-                    # Generate boutique-style description
-                    provenance = ""
-                    if "vintage" in title.lower():
-                        provenance = "A treasured vintage piece with authentic patina"
-                    elif "design" in title.lower():
-                        provenance = "Designer craftsmanship meets timeless elegance"
-                    elif any(wood in title.lower() for wood in ["teak", "eiken", "oak"]):
-                        provenance = "Natural materials showcase expert woodworking"
-                    else:
-                        provenance = "Carefully curated for your unique vision"
+                    location = loc_el.get_text(strip=True) if loc_el else "Amsterdam"
+                    description = desc_el.get_text(strip=True)[:120] if desc_el else "Vintage piece from Amsterdam's marketplace"
                     
                     all_pieces.append({
                         "title": title,
                         "price": price_text,
                         "image": image_url,
                         "url": listing_url,
-                        "provenance": provenance,
-                        "description": "This piece aligns beautifully with the aesthetic you've described."
+                        "location": location,
+                        "description": description
                     })
                     
             except Exception as e:

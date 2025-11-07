@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atelier — Curated Vintage Furniture Discovery</title>
+    <title>Atelier — Find Your Vibe</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -15,23 +15,28 @@
         }
         
         :root {
-            --cream: #FAF8F3;
-            --charcoal: #2A2A2A;
-            --warm-gray: #8B8680;
-            --accent: #9B8B7E;
+            --hot-pink: #FF1B8D;
+            --electric-blue: #0047FF;
+            --sunny-yellow: #FFD60A;
+            --bright-orange: #FF6347;
+            --lime-green: #39FF14;
+            --deep-purple: #8B00FF;
             --white: #FFFFFF;
+            --black: #0A0A0A;
+            --light-gray: #F5F5F5;
         }
         
         body {
-            font-family: 'Inter', sans-serif;
-            background: var(--cream);
-            color: var(--charcoal);
-            line-height: 1.6;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--white);
+            color: var(--black);
+            line-height: 1.5;
             overflow-x: hidden;
         }
         
-        .serif {
-            font-family: 'Cormorant Garamond', serif;
+        .chunky {
+            font-family: 'Space Grotesk', 'DM Sans', sans-serif;
+            font-weight: 700;
         }
         
         /* Landing Page */
@@ -43,97 +48,91 @@
             align-items: center;
             padding: 2rem;
             text-align: center;
+            background: linear-gradient(135deg, var(--light-gray) 0%, var(--white) 100%);
         }
         
         .landing-header {
-            margin-bottom: 4rem;
+            margin-bottom: 3rem;
         }
         
         .landing-title {
-            font-size: clamp(3rem, 8vw, 6rem);
-            font-weight: 300;
-            letter-spacing: -0.02em;
+            font-size: clamp(4rem, 12vw, 8rem);
+            font-weight: 900;
+            letter-spacing: -0.03em;
             margin-bottom: 1rem;
-            color: var(--charcoal);
+            color: var(--black);
+            text-transform: uppercase;
+            line-height: 0.9;
         }
         
         .landing-subtitle {
-            font-size: clamp(1rem, 2vw, 1.25rem);
-            color: var(--warm-gray);
-            font-weight: 300;
+            font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+            color: var(--black);
+            font-weight: 500;
             max-width: 600px;
             margin: 0 auto;
         }
         
         .entry-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 400px));
-            gap: 2rem;
-            max-width: 900px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 350px));
+            gap: 1.5rem;
+            max-width: 800px;
             width: 100%;
         }
         
         .entry-card {
             background: var(--white);
-            padding: 3rem 2rem;
-            border-radius: 2px;
+            padding: 2rem 1.5rem;
+            border-radius: 16px;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid rgba(42, 42, 42, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 3px solid var(--black);
             position: relative;
-            overflow: hidden;
+            overflow: visible;
+            box-shadow: 6px 6px 0 var(--black);
         }
         
-        .entry-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, var(--accent), transparent);
-            opacity: 0;
-            transition: opacity 0.4s ease;
+        .entry-card:nth-child(1) {
+            background: linear-gradient(135deg, var(--hot-pink) 0%, var(--bright-orange) 100%);
+        }
+        
+        .entry-card:nth-child(2) {
+            background: linear-gradient(135deg, var(--electric-blue) 0%, var(--deep-purple) 100%);
         }
         
         .entry-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
-        }
-        
-        .entry-card:hover::before {
-            opacity: 0.03;
+            transform: translate(-4px, -4px);
+            box-shadow: 10px 10px 0 var(--black);
         }
         
         .entry-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1.5rem;
-            position: relative;
-            z-index: 1;
+            font-size: 3rem;
+            margin-bottom: 1rem;
         }
         
         .entry-title {
-            font-size: 1.75rem;
-            margin-bottom: 0.75rem;
-            font-weight: 400;
-            position: relative;
-            z-index: 1;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+            color: var(--white);
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
         }
         
         .entry-description {
-            color: var(--warm-gray);
-            font-size: 0.95rem;
-            line-height: 1.7;
-            position: relative;
-            z-index: 1;
+            color: var(--white);
+            font-size: 1rem;
+            line-height: 1.5;
+            font-weight: 500;
         }
         
         /* Input Section */
         .input-section {
             display: none;
             min-height: 100vh;
-            padding: 4rem 2rem;
-            max-width: 800px;
+            padding: 3rem 2rem;
+            max-width: 700px;
             margin: 0 auto;
         }
         
@@ -142,85 +141,97 @@
         }
         
         .back-button {
-            background: none;
+            background: var(--black);
             border: none;
-            color: var(--warm-gray);
-            font-size: 0.95rem;
+            color: var(--white);
+            font-size: 1rem;
+            font-weight: 700;
             cursor: pointer;
-            margin-bottom: 3rem;
-            transition: color 0.3s ease;
-            display: flex;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
             align-items: center;
             gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         
         .back-button:hover {
-            color: var(--charcoal);
+            background: var(--hot-pink);
+            transform: scale(1.05);
         }
         
         .input-header {
             text-align: center;
-            margin-bottom: 3rem;
+            margin-bottom: 2.5rem;
         }
         
         .input-title {
-            font-size: clamp(2rem, 5vw, 3rem);
-            font-weight: 300;
+            font-size: clamp(2.5rem, 7vw, 4rem);
+            font-weight: 900;
             margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            line-height: 1;
         }
         
         .input-subtitle {
-            color: var(--warm-gray);
+            color: var(--black);
             font-size: 1.1rem;
+            font-weight: 500;
         }
         
         .input-field {
             width: 100%;
-            padding: 1.5rem;
-            font-size: 1.1rem;
-            border: 1px solid rgba(42, 42, 42, 0.15);
-            border-radius: 2px;
+            padding: 1.2rem;
+            font-size: 1rem;
+            border: 3px solid var(--black);
+            border-radius: 12px;
             background: var(--white);
             transition: all 0.3s ease;
-            font-family: 'Inter', sans-serif;
-            color: var(--charcoal);
+            font-family: 'DM Sans', sans-serif;
+            color: var(--black);
+            font-weight: 500;
         }
         
         .input-field:focus {
             outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(155, 139, 126, 0.1);
+            border-color: var(--hot-pink);
+            box-shadow: 0 0 0 4px rgba(255, 27, 141, 0.2);
         }
         
         .input-field::placeholder {
-            color: var(--warm-gray);
+            color: #999;
         }
         
         textarea.input-field {
-            min-height: 150px;
+            min-height: 140px;
             resize: vertical;
         }
         
         .submit-button {
             width: 100%;
             padding: 1.5rem;
-            background: var(--charcoal);
+            background: var(--black);
             color: var(--white);
             border: none;
-            border-radius: 2px;
-            font-size: 1rem;
-            font-weight: 500;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 900;
             cursor: pointer;
             transition: all 0.3s ease;
             margin-top: 1.5rem;
             letter-spacing: 0.05em;
             text-transform: uppercase;
+            box-shadow: 4px 4px 0 var(--hot-pink);
         }
         
         .submit-button:hover {
-            background: var(--accent);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            background: var(--hot-pink);
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 var(--black);
         }
         
         .submit-button:disabled {
@@ -234,19 +245,25 @@
             display: none;
             text-align: center;
             padding: 4rem 2rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
         
         .loading.active {
-            display: block;
+            display: flex;
         }
         
         .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 2px solid rgba(42, 42, 42, 0.1);
-            border-top-color: var(--accent);
+            width: 80px;
+            height: 80px;
+            border: 6px solid var(--light-gray);
+            border-top-color: var(--hot-pink);
+            border-right-color: var(--electric-blue);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
             margin: 0 auto 2rem;
         }
         
@@ -255,16 +272,16 @@
         }
         
         .loading-text {
-            font-size: 1.1rem;
-            color: var(--warm-gray);
-            font-style: italic;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--black);
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
         }
         
         .loading-steps {
             margin-top: 2rem;
             max-width: 400px;
-            margin-left: auto;
-            margin-right: auto;
         }
         
         .loading-step {
@@ -279,26 +296,33 @@
         
         .loading-step.active {
             opacity: 1;
+            animation: pulse 0.5s ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
         
         .loading-step.complete {
-            opacity: 0.6;
+            opacity: 0.5;
         }
         
         .step-icon {
-            font-size: 1.2rem;
+            font-size: 1.5rem;
         }
         
         .step-text {
-            font-size: 0.95rem;
-            color: var(--charcoal);
+            font-size: 1rem;
+            color: var(--black);
+            font-weight: 700;
         }
         
         /* Showroom */
         .showroom {
             display: none;
             min-height: 100vh;
-            padding: 4rem 2rem;
+            padding: 3rem 1.5rem;
         }
         
         .showroom.active {
@@ -307,116 +331,149 @@
         
         .showroom-header {
             text-align: center;
-            margin-bottom: 4rem;
-            max-width: 800px;
+            margin-bottom: 3rem;
+            max-width: 900px;
             margin-left: auto;
             margin-right: auto;
         }
         
         .showroom-title {
-            font-size: clamp(2.5rem, 6vw, 4rem);
-            font-weight: 300;
+            font-size: clamp(2.5rem, 7vw, 5rem);
+            font-weight: 900;
             margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: -0.03em;
+            line-height: 0.95;
         }
         
         .showroom-description {
-            font-size: 1.2rem;
-            color: var(--warm-gray);
-            line-height: 1.8;
+            font-size: 1.1rem;
+            color: var(--black);
+            line-height: 1.6;
+            font-weight: 500;
         }
         
         .collection {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 3rem;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+        
+        @media (min-width: 768px) {
+            .collection {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
         }
         
         .piece {
             background: var(--white);
-            border-radius: 2px;
+            border-radius: 16px;
             overflow: hidden;
-            transition: all 0.4s ease;
-            border: 1px solid rgba(42, 42, 42, 0.06);
+            transition: all 0.3s ease;
+            border: 3px solid var(--black);
+            box-shadow: 4px 4px 0 var(--black);
+            position: relative;
         }
         
         .piece:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15);
+            transform: translate(-4px, -4px);
+            box-shadow: 8px 8px 0 var(--black);
+        }
+        
+        .piece-image-wrapper {
+            position: relative;
+            width: 100%;
+            height: 240px;
+            overflow: hidden;
         }
         
         .piece-image {
             width: 100%;
-            height: 350px;
+            height: 100%;
             object-fit: cover;
-            background: var(--cream);
+            background: var(--light-gray);
+        }
+        
+        .price-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--sunny-yellow);
+            color: var(--black);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-weight: 900;
+            font-size: 1.1rem;
+            border: 2px solid var(--black);
+            box-shadow: 2px 2px 0 var(--black);
+            z-index: 10;
         }
         
         .piece-content {
-            padding: 2rem;
+            padding: 1.5rem;
         }
         
         .piece-title {
-            font-size: 1.5rem;
-            font-weight: 400;
-            margin-bottom: 0.75rem;
-            line-height: 1.3;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+            text-transform: capitalize;
         }
         
-        .piece-provenance {
-            color: var(--warm-gray);
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-            font-style: italic;
+        .piece-location {
+            color: #666;
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         
         .piece-description {
-            color: var(--charcoal);
-            font-size: 0.95rem;
-            line-height: 1.7;
-            margin-bottom: 1.5rem;
-        }
-        
-        .piece-details {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 1.5rem;
-            border-top: 1px solid rgba(42, 42, 42, 0.08);
-        }
-        
-        .piece-price {
-            font-size: 1.3rem;
-            font-weight: 500;
-            color: var(--charcoal);
+            color: var(--black);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
         
         .piece-action {
-            padding: 0.75rem 1.5rem;
-            background: var(--charcoal);
+            display: block;
+            width: 100%;
+            padding: 0.9rem;
+            background: var(--black);
             color: var(--white);
             text-decoration: none;
-            border-radius: 2px;
+            border-radius: 50px;
             font-size: 0.9rem;
+            font-weight: 900;
+            text-align: center;
             transition: all 0.3s ease;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
         
         .piece-action:hover {
-            background: var(--accent);
-            transform: translateY(-2px);
+            background: var(--hot-pink);
+            transform: scale(1.05);
         }
         
         .error {
             display: none;
-            background: #FFF3F3;
-            border: 1px solid #FFD1D1;
-            color: #D8000C;
+            background: var(--bright-orange);
+            border: 3px solid var(--black);
+            color: var(--white);
             padding: 1rem;
-            border-radius: 2px;
+            border-radius: 12px;
             margin-top: 1rem;
             text-align: center;
+            font-weight: 700;
         }
         
         .error.active {
@@ -428,32 +485,32 @@
     <!-- Landing Page -->
     <div class="landing" id="landing">
         <div class="landing-header">
-            <h1 class="landing-title serif">Atelier</h1>
-            <p class="landing-subtitle">Your personal curator for discovering exceptional vintage furniture</p>
+            <h1 class="landing-title chunky">ATELIER</h1>
+            <p class="landing-subtitle">find your vibe ✨ curated vintage furniture that slaps</p>
         </div>
         
         <div class="entry-cards">
             <div class="entry-card" onclick="showInput('pinterest')">
                 <div class="entry-icon">📌</div>
-                <h2 class="entry-title serif">Curate from my Pinterest</h2>
-                <p class="entry-description">Share your moodboard, and we'll find pieces that match your aesthetic vision</p>
+                <h2 class="entry-title chunky">Pinterest Board</h2>
+                <p class="entry-description">drop your moodboard link & we'll find pieces that match your aesthetic</p>
             </div>
             
             <div class="entry-card" onclick="showInput('natural')">
                 <div class="entry-icon">✨</div>
-                <h2 class="entry-title serif">Describe my dream space</h2>
-                <p class="entry-description">Tell us about your ideal room, and we'll curate a collection just for you</p>
+                <h2 class="entry-title chunky">Describe It</h2>
+                <p class="entry-description">tell us your vibe & we'll curate the perfect collection for you</p>
             </div>
         </div>
     </div>
     
     <!-- Pinterest Input -->
     <div class="input-section" id="pinterest-input">
-        <button class="back-button" onclick="showLanding()">← Back</button>
+        <button class="back-button" onclick="showLanding()">← BACK</button>
         
         <div class="input-header">
-            <h2 class="input-title serif">Share Your Pinterest Board</h2>
-            <p class="input-subtitle">Paste the link to your Pinterest board or collection</p>
+            <h2 class="input-title chunky">Drop Your Pinterest Board</h2>
+            <p class="input-subtitle">paste the link below</p>
         </div>
         
         <input 
@@ -463,27 +520,27 @@
             placeholder="https://www.pinterest.com/username/board-name/"
         >
         
-        <button class="submit-button" onclick="curateFromPinterest()">Begin Curation</button>
+        <button class="submit-button chunky" onclick="curateFromPinterest()">Let's Go 🚀</button>
         
         <div class="error" id="pinterest-error"></div>
     </div>
     
     <!-- Natural Language Input -->
     <div class="input-section" id="natural-input">
-        <button class="back-button" onclick="showLanding()">← Back</button>
+        <button class="back-button" onclick="showLanding()">← BACK</button>
         
         <div class="input-header">
-            <h2 class="input-title serif">Describe Your Dream Space</h2>
-            <p class="input-subtitle">Tell us about the room, style, colors, and pieces you envision</p>
+            <h2 class="input-title chunky">What's Your Vibe?</h2>
+            <p class="input-subtitle">describe your dream space</p>
         </div>
         
         <textarea 
             class="input-field" 
             id="natural-description"
-            placeholder="I'm looking for a minimalist home office with natural wood tones, clean lines, and Scandinavian influences. I need a desk, a comfortable chair, and perhaps some storage..."
+            placeholder="looking for a cozy minimalist setup with natural wood vibes, clean lines, scandi aesthetic. need a desk, comfy chair, maybe some storage..."
         ></textarea>
         
-        <button class="submit-button" onclick="curateFromNatural()">Begin Curation</button>
+        <button class="submit-button chunky" onclick="curateFromNatural()">Let's Go 🚀</button>
         
         <div class="error" id="natural-error"></div>
     </div>
@@ -491,29 +548,29 @@
     <!-- Loading State -->
     <div class="loading" id="loading">
         <div class="loading-spinner"></div>
-        <p class="loading-text serif">Curating your collection...</p>
+        <p class="loading-text chunky">Curating Your Collection...</p>
         <div class="loading-steps" id="loading-steps">
             <div class="loading-step" id="step-1">
-                <span class="step-icon">📌</span>
-                <span class="step-text">Analyzing your aesthetic preferences...</span>
+                <span class="step-icon">🔍</span>
+                <span class="step-text chunky">analyzing your vibe...</span>
             </div>
             <div class="loading-step" id="step-2">
-                <span class="step-icon">🔍</span>
-                <span class="step-text">Searching Amsterdam's vintage marketplace...</span>
+                <span class="step-icon">✨</span>
+                <span class="step-text chunky">searching marketplace...</span>
             </div>
             <div class="loading-step" id="step-3">
-                <span class="step-icon">✨</span>
-                <span class="step-text">Curating exceptional pieces just for you...</span>
+                <span class="step-icon">🎨</span>
+                <span class="step-text chunky">curating pieces...</span>
             </div>
         </div>
     </div>
     
     <!-- Showroom -->
     <div class="showroom" id="showroom">
-        <button class="back-button" onclick="showLanding()">← Start over</button>
+        <button class="back-button" onclick="showLanding()">← START OVER</button>
         
         <div class="showroom-header">
-            <h2 class="showroom-title serif" id="collection-title">Your Curated Collection</h2>
+            <h2 class="showroom-title chunky" id="collection-title">YOUR CURATED COLLECTION</h2>
             <p class="showroom-description" id="collection-description"></p>
         </div>
         
@@ -620,17 +677,17 @@
             document.getElementById('loading').classList.add('active');
             
             // Animate loading steps
-            setTimeout(() => document.getElementById('step-1').classList.add('active'), 500);
+            setTimeout(() => document.getElementById('step-1').classList.add('active'), 300);
             setTimeout(() => {
                 document.getElementById('step-1').classList.remove('active');
                 document.getElementById('step-1').classList.add('complete');
                 document.getElementById('step-2').classList.add('active');
-            }, 2000);
+            }, 1500);
             setTimeout(() => {
                 document.getElementById('step-2').classList.remove('active');
                 document.getElementById('step-2').classList.add('complete');
                 document.getElementById('step-3').classList.add('active');
-            }, 4000);
+            }, 3000);
         }
         
         function hideLoading() {
@@ -644,7 +701,7 @@
         function displayCollection(data) {
             hideLoading();
             
-            document.getElementById('collection-title').textContent = data.title || 'Your Curated Collection';
+            document.getElementById('collection-title').textContent = data.title || 'YOUR CURATED COLLECTION';
             document.getElementById('collection-description').textContent = data.description || '';
             
             const collectionDiv = document.getElementById('collection');
@@ -654,15 +711,15 @@
                 const pieceEl = document.createElement('div');
                 pieceEl.className = 'piece';
                 pieceEl.innerHTML = `
-                    ${piece.image ? `<img src="${piece.image}" alt="${piece.title}" class="piece-image" onerror="this.style.display='none'">` : ''}
+                    <div class="piece-image-wrapper">
+                        ${piece.image ? `<img src="${piece.image}" alt="${piece.title}" class="piece-image" onerror="this.style.display='none'">` : ''}
+                        <div class="price-badge">${piece.price}</div>
+                    </div>
                     <div class="piece-content">
-                        <h3 class="piece-title serif">${piece.title}</h3>
-                        ${piece.provenance ? `<p class="piece-provenance">${piece.provenance}</p>` : ''}
+                        <h3 class="piece-title chunky">${piece.title}</h3>
+                        ${piece.location ? `<p class="piece-location">${piece.location}</p>` : ''}
                         ${piece.description ? `<p class="piece-description">${piece.description}</p>` : ''}
-                        <div class="piece-details">
-                            <span class="piece-price">${piece.price}</span>
-                            <a href="${piece.url}" target="_blank" class="piece-action">View Piece</a>
-                        </div>
+                        <a href="${piece.url}" target="_blank" class="piece-action chunky">View Item 👀</a>
                     </div>
                 `;
                 collectionDiv.appendChild(pieceEl);
