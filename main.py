@@ -272,6 +272,87 @@ class NaturalRequest(BaseModel):
     description: str
     city: Optional[str] = "amsterdam"
 
+def extract_aesthetic_keywords(text_lower):
+    """Extract specific aesthetic/style keywords from text"""
+    aesthetics = {
+        "mid_century": ["mid-century", "mid century", "jaren 50", "jaren 60", "50s", "60s", "mcm"],
+        "scandinavian": ["scandinavian", "scandi", "nordic", "scandinavisch", "deens", "zweeds"],
+        "industrial": ["industrial", "industrieel", "factory", "metaal", "staal"],
+        "minimalist": ["minimal", "minimalist", "clean", "minimalistisch", "simpel"],
+        "boho": ["boho", "bohemian", "eclectic", "bohemien"],
+        "modern": ["modern", "contemporary", "eigentijds"],
+        "rustic": ["rustic", "farmhouse", "landelijk", "rustiek"]
+    }
+    
+    materials = {
+        "teak": ["teak", "teakhout"],
+        "oak": ["oak", "eiken", "eikenhout"],
+        "walnut": ["walnut", "walnoot", "notenhout"],
+        "wood": ["wood", "hout", "houten"],
+        "metal": ["metal", "metaal", "staal", "ijzer"],
+        "leather": ["leather", "leer", "leren"]
+    }
+    
+    found_aesthetics = []
+    found_materials = []
+    
+    for key, keywords in aesthetics.items():
+        if any(kw in text_lower for kw in keywords):
+            found_aesthetics.append(key)
+    
+    for key, keywords in materials.items():
+        if any(kw in text_lower for kw in keywords):
+            found_materials.append(key)
+    
+    return found_aesthetics, found_materials
+
+def generate_specific_queries(furniture_types, aesthetics, materials):
+    """Generate specific, aesthetic-focused search queries in Dutch"""
+    
+    # Dutch style translations (more specific than generic "vintage")
+    dutch_styles = {
+        "mid_century": ["jaren 60", "mid century", "retro"],
+        "scandinavian": ["scandinavisch", "deens design"],
+        "industrial": ["industrieel", "industriële"],
+        "minimalist": ["minimalistisch", "modern"],
+        "boho": ["bohemian"],
+        "modern": ["modern design"],
+        "rustic": ["landelijk"]
+    }
+    
+    # Dutch material translations
+    dutch_materials = {
+        "teak": ["teakhout", "teak"],
+        "oak": ["eikenhout", "eiken"],
+        "walnut": ["notenhout"],
+        "wood": ["houten"],
+        "metal": ["metaal"],
+        "leather": ["leren"]
+    }
+    
+    queries = []
+    
+    # Strategy: Combine furniture + style + material for very specific queries
+    for furniture in furniture_types[:2]:  # Limit to 2 furniture types
+        # Add style-specific queries
+        for aesthetic in aesthetics[:2]:  # Top 2 aesthetics
+            if aesthetic in dutch_styles:
+                style_term = dutch_styles[aesthetic][0]
+                queries.append(f"{furniture} {style_term}")
+        
+        # Add material-specific queries
+        for material in materials[:1]:  # Top material
+            if material in dutch_materials:
+                material_term = dutch_materials[material][0]
+                queries.append(f"{furniture} {material_term}")
+    
+    # If no specific styles found, use design/vintage as fallback
+    if not queries:
+        for furniture in furniture_types[:2]:
+            queries.append(f"{furniture} design")
+    
+    return list(set(queries))[:5]  # Dedupe and limit to 5
+
 @app.post("/curate-pinterest")
 async def curate_pinterest(request: PinterestRequest):
     """
@@ -284,39 +365,36 @@ async def curate_pinterest(request: PinterestRequest):
         
         # Extract style hints from URL
         url_lower = pinterest_url.lower()
-        style_keywords = []
         furniture_keywords = set()
         
-        # Detect furniture types and styles from URL
+        # Detect furniture types from URL
         if any(word in url_lower for word in ["office", "workspace", "desk", "study", "bureau"]):
             furniture_keywords.update(["bureau", "stoel"])
-            style_keywords.append("vintage")
-        if any(word in url_lower for word in ["minimal", "scandinavian", "scandi", "nordic"]):
-            style_keywords.append("scandinavisch")
-        if any(word in url_lower for word in ["vintage", "retro", "mid-century", "mid century"]):
-            style_keywords.append("vintage")
-        if any(word in url_lower for word in ["wood", "teak", "oak", "hout"]):
-            style_keywords.append("hout")
         if any(word in url_lower for word in ["dining", "eetkamer", "table", "tafel"]):
-            furniture_keywords.update(["eettafel", "stoel"])
+            furniture_keywords.update(["eettafel", "eetkamerstoel"])
         if any(word in url_lower for word in ["living", "woonkamer", "sofa", "bank"]):
-            furniture_keywords.update(["bank", "kast"])
+            furniture_keywords.update(["bank", "salontafel", "kast"])
+        if any(word in url_lower for word in ["bedroom", "slaapkamer", "bed"]):
+            furniture_keywords.update(["bed", "nachtkastje"])
+        if any(word in url_lower for word in ["shelv", "kast", "storage", "opberg"]):
+            furniture_keywords.update(["kast", "boekenkast"])
         
-        # Default to general vintage furniture if nothing detected
+        # Default to common vintage furniture if nothing detected
         if not furniture_keywords:
-            furniture_keywords = {"bureau", "stoel", "tafel"}
-        if not style_keywords:
-            style_keywords = ["vintage", "design"]
+            furniture_keywords = {"bureau", "stoel", "kast"}
         
-        # Build search queries
-        search_queries = []
-        for item in list(furniture_keywords)[:3]:
-            if style_keywords:
-                search_queries.append(f"{item} {style_keywords[0]}")
-            else:
-                search_queries.append(item)
+        # Extract aesthetic keywords
+        aesthetics, materials = extract_aesthetic_keywords(url_lower)
         
-        logger.info(f"Pinterest URL-based search queries: {search_queries}")
+        # Generate specific search queries
+        search_queries = generate_specific_queries(
+            list(furniture_keywords), 
+            aesthetics, 
+            materials
+        )
+        
+        logger.info(f"Pinterest aesthetic analysis - Styles: {aesthetics}, Materials: {materials}")
+        logger.info(f"Generated search queries: {search_queries}")
         
         # Search Marktplaats
         all_pieces = []
@@ -387,12 +465,21 @@ async def curate_pinterest(request: PinterestRequest):
                 logger.error(f"Search failed for '{query}': {e}")
                 continue
         
-        # Create curated response
-        style_desc = "minimalist Scandinavian aesthetic" if "scandinavisch" in style_keywords else "vintage design aesthetic"
+        # Create curated response with specific style description
+        if "scandinavian" in aesthetics:
+            style_desc = "Scandinavian aesthetic"
+        elif "mid_century" in aesthetics:
+            style_desc = "mid-century modern aesthetic"
+        elif "industrial" in aesthetics:
+            style_desc = "industrial aesthetic"
+        elif "minimalist" in aesthetics:
+            style_desc = "minimalist aesthetic"
+        else:
+            style_desc = "design aesthetic"
         
         return {
             "title": "Your Curated Collection",
-            "description": f"We've analyzed your Pinterest board and found {len(all_pieces)} exceptional pieces that match your {style_desc}.",
+            "description": f"We've analyzed your Pinterest board and found {len(all_pieces)} pieces that match your {style_desc}.",
             "pieces": all_pieces[:12]
         }
         
@@ -418,7 +505,9 @@ async def curate_natural(request: NaturalRequest):
             "shelf": "rek", "shelving": "rek", "rek": "rek",
             "sofa": "bank", "couch": "bank", "bank": "bank",
             "lamp": "lamp", "lighting": "lamp",
-            "dresser": "dressoir", "dressoir": "dressoir"
+            "dresser": "dressoir", "dressoir": "dressoir",
+            "storage": "opbergruimte", "opslag": "opbergruimte",
+            "dining": "eettafel", "eettafel": "eettafel"
         }
         
         furniture_items = []
@@ -429,30 +518,18 @@ async def curate_natural(request: NaturalRequest):
         if not furniture_items:
             furniture_items = ["meubels"]
         
-        # Extract style keywords
-        style_keywords = []
-        if any(word in description for word in ["vintage", "retro", "antique"]):
-            style_keywords.append("vintage")
-        if any(word in description for word in ["scandinavian", "scandinavisch", "nordic"]):
-            style_keywords.append("scandinavisch")
-        if any(word in description for word in ["mid century", "mid-century", "jaren 60"]):
-            style_keywords.append("jaren 60")
-        if any(word in description for word in ["minimalist", "minimal", "clean"]):
-            style_keywords.append("minimalistisch")
-        if any(word in description for word in ["wood", "wooden", "teak", "oak"]):
-            style_keywords.append("hout")
-        if any(word in description for word in ["industrial", "industrieel"]):
-            style_keywords.append("industrieel")
+        # Use improved aesthetic extraction
+        aesthetics, materials = extract_aesthetic_keywords(description)
         
-        # Build search queries
-        search_queries = []
-        for item in furniture_items[:3]:
-            if style_keywords:
-                search_queries.append(f"{item} {style_keywords[0]}")
-            else:
-                search_queries.append(item)
+        # Generate specific search queries
+        search_queries = generate_specific_queries(
+            list(set(furniture_items)),  # Dedupe furniture items
+            aesthetics,
+            materials
+        )
         
-        logger.info(f"Search queries: {search_queries}")
+        logger.info(f"Natural language aesthetic analysis - Styles: {aesthetics}, Materials: {materials}")
+        logger.info(f"Generated search queries: {search_queries}")
         
         # Search Marktplaats
         all_pieces = []
