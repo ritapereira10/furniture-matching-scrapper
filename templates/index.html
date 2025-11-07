@@ -482,6 +482,47 @@
             display: block;
         }
         
+        /* Help Box */
+        .help-box {
+            background: var(--baby-blue);
+            border: 3px solid var(--black);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-top: 1rem;
+            box-shadow: 4px 4px 0 var(--black);
+        }
+        
+        .help-title {
+            font-weight: 900;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+            color: var(--black);
+        }
+        
+        .help-steps {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--black);
+        }
+        
+        .help-step {
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .help-step:last-child {
+            margin-bottom: 0;
+        }
+        
+        .help-step-number {
+            font-weight: 900;
+            min-width: 1.5rem;
+        }
+        
         /* Language Selector */
         .lang-selector {
             position: fixed;
@@ -564,6 +605,28 @@
             data-i18n-placeholder="pinterest-placeholder"
             placeholder="https://www.pinterest.com/username/board-name/"
         >
+        
+        <div class="help-box">
+            <div class="help-title" data-i18n="help-title">💡 How to get your board link:</div>
+            <div class="help-steps">
+                <div class="help-step">
+                    <span class="help-step-number">1.</span>
+                    <span data-i18n="help-step1">Go to Pinterest → Boards tab</span>
+                </div>
+                <div class="help-step">
+                    <span class="help-step-number">2.</span>
+                    <span data-i18n="help-step2">Click on the board you want to use</span>
+                </div>
+                <div class="help-step">
+                    <span class="help-step-number">3.</span>
+                    <span data-i18n="help-step3">Click the share icon (↑) at the top</span>
+                </div>
+                <div class="help-step">
+                    <span class="help-step-number">4.</span>
+                    <span data-i18n="help-step4">Click "Copy link" and paste it above</span>
+                </div>
+            </div>
+        </div>
         
         <label for="pinterest-city" style="display: block; margin-top: 1.5rem; margin-bottom: 0.5rem; font-weight: 700; font-size: 0.9rem;" data-i18n="city-label">📍 Search in city:</label>
         <select id="pinterest-city" class="input-field">
@@ -683,7 +746,12 @@
                 "error-natural-empty": "Please describe your dream space",
                 "error-pinterest-unavailable": "Pinterest curation is temporarily unavailable. Please try describing your dream space instead.",
                 "error-curate-failed": "Failed to curate collection. Please try again.",
-                "error-generic": "Something went wrong. Please try again."
+                "error-generic": "Something went wrong. Please try again.",
+                "help-title": "💡 How to get your board link:",
+                "help-step1": "Go to Pinterest → Boards tab",
+                "help-step2": "Click on the board you want to use",
+                "help-step3": "Click the share icon (↑) at the top",
+                "help-step4": "Click \"Copy link\" and paste it above"
             },
             nl: {
                 "landing-subtitle": "vind je vibe ✨ vintage meubels die echt kloppen",
@@ -711,7 +779,12 @@
                 "error-natural-empty": "Beschrijf je droomruimte",
                 "error-pinterest-unavailable": "Pinterest curatie is tijdelijk niet beschikbaar. Probeer je droomruimte te beschrijven.",
                 "error-curate-failed": "Collectie cureren mislukt. Probeer het opnieuw.",
-                "error-generic": "Er is iets misgegaan. Probeer het opnieuw."
+                "error-generic": "Er is iets misgegaan. Probeer het opnieuw.",
+                "help-title": "💡 Hoe krijg je je bord link:",
+                "help-step1": "Ga naar Pinterest → Borden tab",
+                "help-step2": "Klik op het bord dat je wilt gebruiken",
+                "help-step3": "Klik op het deel icoon (↑) bovenaan",
+                "help-step4": "Klik op \"Link kopiëren\" en plak het hierboven"
             },
             pt: {
                 "landing-subtitle": "encontre sua vibe ✨ móveis vintage curados que arrasam",
@@ -739,7 +812,12 @@
                 "error-natural-empty": "Por favor, descreva seu espaço dos sonhos",
                 "error-pinterest-unavailable": "Curadoria do Pinterest está temporariamente indisponível. Por favor, tente descrever seu espaço dos sonhos.",
                 "error-curate-failed": "Falha ao curar coleção. Por favor, tente novamente.",
-                "error-generic": "Algo deu errado. Por favor, tente novamente."
+                "error-generic": "Algo deu errado. Por favor, tente novamente.",
+                "help-title": "💡 Como obter o link do seu quadro:",
+                "help-step1": "Vá para Pinterest → aba Quadros",
+                "help-step2": "Clique no quadro que deseja usar",
+                "help-step3": "Clique no ícone de compartilhar (↑) no topo",
+                "help-step4": "Clique em \"Copiar link\" e cole acima"
             },
             de: {
                 "landing-subtitle": "finde deinen vibe ✨ kuratierte vintage möbel die rocken",
@@ -767,7 +845,12 @@
                 "error-natural-empty": "Bitte beschreibe deinen traumraum",
                 "error-pinterest-unavailable": "Pinterest-Kuration ist vorübergehend nicht verfügbar. Bitte versuche, deinen Traumraum zu beschreiben.",
                 "error-curate-failed": "Kollektion kuratieren fehlgeschlagen. Bitte versuche es erneut.",
-                "error-generic": "Etwas ist schief gelaufen. Bitte versuche es erneut."
+                "error-generic": "Etwas ist schief gelaufen. Bitte versuche es erneut.",
+                "help-title": "💡 So bekommst du deinen Board-Link:",
+                "help-step1": "Gehe zu Pinterest → Pinnwände Tab",
+                "help-step2": "Klicke auf das Board, das du verwenden möchtest",
+                "help-step3": "Klicke auf das Teilen-Symbol (↑) oben",
+                "help-step4": "Klicke auf \"Link kopieren\" und füge ihn oben ein"
             },
             fr: {
                 "landing-subtitle": "trouve ta vibe ✨ meubles vintage curés qui déchirent",
@@ -795,7 +878,12 @@
                 "error-natural-empty": "S'il te plaît, décris ton espace de rêve",
                 "error-pinterest-unavailable": "La curation Pinterest est temporairement indisponible. Essaie de décrire ton espace de rêve.",
                 "error-curate-failed": "Échec de la curation de la collection. Réessaye.",
-                "error-generic": "Quelque chose s'est mal passé. Réessaye."
+                "error-generic": "Quelque chose s'est mal passé. Réessaye.",
+                "help-title": "💡 Comment obtenir le lien de ton tableau:",
+                "help-step1": "Va sur Pinterest → onglet Tableaux",
+                "help-step2": "Clique sur le tableau que tu veux utiliser",
+                "help-step3": "Clique sur l'icône de partage (↑) en haut",
+                "help-step4": "Clique sur \"Copier le lien\" et colle-le ci-dessus"
             }
         };
 
