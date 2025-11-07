@@ -276,7 +276,16 @@ async def curate_pinterest(request: PinterestRequest):
     Curate furniture from Pinterest board aesthetic
     """
     try:
-        from playwright.async_api import async_playwright
+        try:
+            from playwright.async_api import async_playwright
+        except Exception as e:
+            logger.error(f"Playwright not available: {e}")
+            return {
+                "title": "Pinterest Feature Temporarily Unavailable",
+                "description": "We're working on bringing Pinterest board curation to you. For now, please try describing your dream space using natural language.",
+                "pieces": [],
+                "error": "playwright_unavailable"
+            }
         
         pinterest_url = request.url
         logger.info(f"Curating from Pinterest: {pinterest_url}")
@@ -365,19 +374,25 @@ async def curate_pinterest(request: PinterestRequest):
         all_pieces = []
         for query in search_queries[:4]:
             try:
-                search_url = f"{BASE}/l/#{urljoin('', query.replace(' ', '-'))}"
-                search_url = f"{BASE}/l/?query={query.replace(' ', '+')}&distanceMeters=10000&postcode=1012JS"
+                search_url = f"{BASE}/q/{query}/"
                 
                 resp = requests.get(search_url, headers=HEADERS, timeout=10)
                 soup = BeautifulSoup(resp.content, "lxml")
                 
-                listings = soup.select(SEL["listing_card"])[:5]
+                listings = soup.select(SEL["card"])[:5]
+                
+                if len(listings) == 0:
+                    alt_selectors = ["li[data-testid='listing-item']", "article[data-testid='listing']", ".hz-Listing"]
+                    for alt_sel in alt_selectors:
+                        listings = soup.select(alt_sel)
+                        if len(listings) > 0:
+                            break
                 
                 for listing in listings:
-                    title_el = listing.select_one(SEL["title"]) or listing.select_one(SEL["title_fallback"])
+                    title_el = listing.select_one(SEL["title"]) or listing.select_one("h3")
                     price_el = listing.select_one(SEL["price"])
                     img_el = listing.select_one(SEL["image"])
-                    link_el = listing.select_one("a[href*='/v/']") or listing.select_one("a[href*='/a/']")
+                    link_el = listing.select_one(SEL["link"])
                     
                     if not title_el or not link_el:
                         continue
@@ -482,18 +497,25 @@ async def curate_natural(request: NaturalRequest):
         all_pieces = []
         for query in search_queries[:5]:
             try:
-                search_url = f"{BASE}/l/?query={query.replace(' ', '+')}&distanceMeters=10000&postcode=1012JS"
+                search_url = f"{BASE}/q/{query}/"
                 
                 resp = requests.get(search_url, headers=HEADERS, timeout=10)
                 soup = BeautifulSoup(resp.content, "lxml")
                 
-                listings = soup.select(SEL["listing_card"])[:6]
+                listings = soup.select(SEL["card"])[:6]
+                
+                if len(listings) == 0:
+                    alt_selectors = ["li[data-testid='listing-item']", "article[data-testid='listing']", ".hz-Listing"]
+                    for alt_sel in alt_selectors:
+                        listings = soup.select(alt_sel)
+                        if len(listings) > 0:
+                            break
                 
                 for listing in listings:
-                    title_el = listing.select_one(SEL["title"]) or listing.select_one(SEL["title_fallback"])
+                    title_el = listing.select_one(SEL["title"]) or listing.select_one("h3")
                     price_el = listing.select_one(SEL["price"])
                     img_el = listing.select_one(SEL["image"])
-                    link_el = listing.select_one("a[href*='/v/']") or listing.select_one("a[href*='/a/']")
+                    link_el = listing.select_one(SEL["link"])
                     
                     if not title_el or not link_el:
                         continue

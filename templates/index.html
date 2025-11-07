@@ -513,6 +513,18 @@
                 if (!response.ok) throw new Error('Failed to curate collection');
                 
                 const data = await response.json();
+                
+                if (data.error === 'playwright_unavailable') {
+                    hideLoading();
+                    errorDiv.textContent = 'Pinterest curation is temporarily unavailable. Please try describing your dream space instead.';
+                    errorDiv.classList.add('active');
+                    setTimeout(() => {
+                        document.getElementById('pinterest-input').classList.remove('active');
+                        document.getElementById('natural-input').classList.add('active');
+                    }, 2000);
+                    return;
+                }
+                
                 displayCollection(data);
             } catch (error) {
                 hideLoading();
