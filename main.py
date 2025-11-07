@@ -1,4 +1,8 @@
 from fastapi import FastAPI, Query
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+from starlette.requests import Request
 from pydantic import BaseModel
 import uvicorn
 import requests
@@ -7,10 +11,14 @@ from urllib.parse import urljoin
 import re
 from typing import Optional, List
 import logging
+import os
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Templates
+templates = Jinja2Templates(directory="templates")
 
 app = FastAPI(
     title="Marktplaats Scraper API", 
@@ -80,9 +88,9 @@ def extract_id(url: str) -> str:
     m = re.search(r"/v/(\d+)", url)
     return m.group(1) if m else re.sub(r"\W+", "", url)[-24:]
 
-@app.get("/")
-def read_root():
-    return {"message": "Marktplaats Scraper API"}
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/scrape")
 def scrape(
