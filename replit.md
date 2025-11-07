@@ -29,6 +29,7 @@ Preferred communication style: Simple, everyday language.
 - **Price Parsing**: Handles both fixed prices and negotiable items ("Bieden")
 - **Deduplication**: Prevents duplicate listings using unique ID extraction
 - **Rate Limiting**: Implements respectful scraping with delays and proper headers
+- **Proper URL Encoding**: Uses requests params dict for query parameters to correctly encode spaces and special characters
 
 # External Dependencies
 
@@ -65,11 +66,20 @@ Raw Marktplaats listings are transformed into curated "pieces" with:
 
 ## Key Features
 - **Dual Input Modes**: Pinterest board URL OR natural language description
+- **Multi-Language Support**: Complete internationalization with 5 languages (EN, NL, PT, DE, FR)
+  - Dropdown selector in top-right corner for language selection
+  - All UI text fully translated including loading states, error messages, and dynamic content
+  - localStorage persistence - language preference saved across sessions
+  - Translations cover landing page, input screens, buttons, validation errors, and success messages
+- **City-Based Filtering**: Search within 8 major Dutch cities with 10km radius
+  - Amsterdam (default), Rotterdam, Den Haag, Utrecht, Eindhoven, Groningen, Tilburg, Almere
+  - Backend maps cities to postal codes for Marktplaats location filtering
+  - Proper URL encoding using requests params argument prevents query string issues
 - **Aesthetic Analysis**: Extracts style keywords (vintage, Scandinavian, mid-century, teak, etc.)
 - **Intelligent Search**: Translates aesthetic preferences into Dutch search queries for Marktplaats
 - **Boutique Presentation**: Transforms raw listings into curated "pieces" with storytelling
 - **Graceful Degradation**: Pinterest feature gracefully handles missing Playwright dependencies
-- **Error Handling**: User-friendly error messages and automatic fallback to natural language mode
+- **Error Handling**: User-friendly multilingual error messages with automatic fallback to natural language mode
 - **Logging**: Comprehensive logging for debugging and monitoring
 
 ## Known Limitations
