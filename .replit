@@ -12,8 +12,8 @@ language = "python3"
 requiredFiles = [".replit", "replit.nix"]
 
 [deployment]
-run = ["uvicorn", "main:app", "--host=0.0.0.0", "--port=8000"]
-deploymentTarget = "cloudrun"
+run = ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000"]
+deploymentTarget = "autoscale"
 
 [[ports]]
 localPort = 5000
@@ -22,10 +22,6 @@ externalPort = 80
 [[ports]]
 localPort = 8000
 externalPort = 80
-
-[[ports]]
-localPort = 41201
-externalPort = 3000
 
 [workflows]
 runButton = "Project"
