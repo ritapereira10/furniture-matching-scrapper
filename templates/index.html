@@ -260,6 +260,40 @@
             font-style: italic;
         }
         
+        .loading-steps {
+            margin-top: 2rem;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .loading-step {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.3;
+            transition: opacity 0.3s ease;
+        }
+        
+        .loading-step.active {
+            opacity: 1;
+        }
+        
+        .loading-step.complete {
+            opacity: 0.6;
+        }
+        
+        .step-icon {
+            font-size: 1.2rem;
+        }
+        
+        .step-text {
+            font-size: 0.95rem;
+            color: var(--charcoal);
+        }
+        
         /* Showroom */
         .showroom {
             display: none;
@@ -458,6 +492,20 @@
     <div class="loading" id="loading">
         <div class="loading-spinner"></div>
         <p class="loading-text serif">Curating your collection...</p>
+        <div class="loading-steps" id="loading-steps">
+            <div class="loading-step" id="step-1">
+                <span class="step-icon">📌</span>
+                <span class="step-text">Analyzing your aesthetic preferences...</span>
+            </div>
+            <div class="loading-step" id="step-2">
+                <span class="step-icon">🔍</span>
+                <span class="step-text">Searching Amsterdam's vintage marketplace...</span>
+            </div>
+            <div class="loading-step" id="step-3">
+                <span class="step-icon">✨</span>
+                <span class="step-text">Curating exceptional pieces just for you...</span>
+            </div>
+        </div>
     </div>
     
     <!-- Showroom -->
@@ -570,10 +618,27 @@
             document.getElementById('pinterest-input').classList.remove('active');
             document.getElementById('natural-input').classList.remove('active');
             document.getElementById('loading').classList.add('active');
+            
+            // Animate loading steps
+            setTimeout(() => document.getElementById('step-1').classList.add('active'), 500);
+            setTimeout(() => {
+                document.getElementById('step-1').classList.remove('active');
+                document.getElementById('step-1').classList.add('complete');
+                document.getElementById('step-2').classList.add('active');
+            }, 2000);
+            setTimeout(() => {
+                document.getElementById('step-2').classList.remove('active');
+                document.getElementById('step-2').classList.add('complete');
+                document.getElementById('step-3').classList.add('active');
+            }, 4000);
         }
         
         function hideLoading() {
             document.getElementById('loading').classList.remove('active');
+            // Reset steps
+            ['step-1', 'step-2', 'step-3'].forEach(id => {
+                document.getElementById(id).classList.remove('active', 'complete');
+            });
         }
         
         function displayCollection(data) {

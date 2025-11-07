@@ -274,101 +274,47 @@ class NaturalRequest(BaseModel):
 async def curate_pinterest(request: PinterestRequest):
     """
     Curate furniture from Pinterest board aesthetic
+    Uses URL-based style extraction since Playwright browser dependencies aren't available
     """
     try:
-        try:
-            from playwright.async_api import async_playwright
-        except Exception as e:
-            logger.error(f"Playwright not available: {e}")
-            return {
-                "title": "Pinterest Feature Temporarily Unavailable",
-                "description": "We're working on bringing Pinterest board curation to you. For now, please try describing your dream space using natural language.",
-                "pieces": [],
-                "error": "playwright_unavailable"
-            }
-        
         pinterest_url = request.url
-        logger.info(f"Curating from Pinterest: {pinterest_url}")
+        logger.info(f"Curating from Pinterest URL: {pinterest_url}")
         
-        # Extract pin titles/descriptions from Pinterest
-        pins_data = []
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
-            
-            try:
-                await page.goto(pinterest_url, timeout=30000)
-                await page.wait_for_timeout(3000)
-                
-                # Scroll to load more pins
-                for _ in range(3):
-                    await page.evaluate("window.scrollBy(0, window.innerHeight)")
-                    await page.wait_for_timeout(1500)
-                
-                # Extract pin data
-                pins = await page.query_selector_all('[data-test-id="pin"]')
-                logger.info(f"Found {len(pins)} pins")
-                
-                for pin in pins[:20]:
-                    try:
-                        title_el = await pin.query_selector('[data-test-id="pin-title"]')
-                        desc_el = await pin.query_selector('[data-test-id="pincard-description"]')
-                        
-                        title = await title_el.inner_text() if title_el else ""
-                        desc = await desc_el.inner_text() if desc_el else ""
-                        
-                        if title or desc:
-                            pins_data.append({
-                                "title": title,
-                                "description": desc
-                            })
-                    except:
-                        continue
-                        
-            finally:
-                await browser.close()
-        
-        logger.info(f"Extracted {len(pins_data)} pin descriptions")
-        
-        # Extract furniture keywords from pins
-        furniture_keywords = set()
-        common_furniture = ["bureau", "desk", "stoel", "chair", "tafel", "table", "kast", "cabinet", 
-                           "lamp", "rek", "shelf", "bank", "sofa", "dressoir"]
-        
-        for pin in pins_data:
-            text = f"{pin['title']} {pin['description']}".lower()
-            for keyword in common_furniture:
-                if keyword in text:
-                    furniture_keywords.add(keyword)
-        
-        # Add style keywords from pins
+        # Extract style hints from URL
+        url_lower = pinterest_url.lower()
         style_keywords = []
-        all_text = " ".join([f"{p['title']} {p['description']}" for p in pins_data]).lower()
+        furniture_keywords = set()
         
-        if "vintage" in all_text or "retro" in all_text:
+        # Detect furniture types and styles from URL
+        if any(word in url_lower for word in ["office", "workspace", "desk", "study", "bureau"]):
+            furniture_keywords.update(["bureau", "stoel"])
             style_keywords.append("vintage")
-        if "teak" in all_text or "wood" in all_text or "hout" in all_text:
-            style_keywords.append("teak")
-        if "mid century" in all_text or "jaren 60" in all_text:
-            style_keywords.append("jaren 60")
-        if "scandinavian" in all_text or "scandinavisch" in all_text:
+        if any(word in url_lower for word in ["minimal", "scandinavian", "scandi", "nordic"]):
             style_keywords.append("scandinavisch")
-        if "minimalist" in all_text or "minimalistisch" in all_text:
-            style_keywords.append("minimalistisch")
+        if any(word in url_lower for word in ["vintage", "retro", "mid-century", "mid century"]):
+            style_keywords.append("vintage")
+        if any(word in url_lower for word in ["wood", "teak", "oak", "hout"]):
+            style_keywords.append("hout")
+        if any(word in url_lower for word in ["dining", "eetkamer", "table", "tafel"]):
+            furniture_keywords.update(["eettafel", "stoel"])
+        if any(word in url_lower for word in ["living", "woonkamer", "sofa", "bank"]):
+            furniture_keywords.update(["bank", "kast"])
+        
+        # Default to general vintage furniture if nothing detected
+        if not furniture_keywords:
+            furniture_keywords = {"bureau", "stoel", "tafel"}
+        if not style_keywords:
+            style_keywords = ["vintage", "design"]
         
         # Build search queries
         search_queries = []
-        if furniture_keywords:
-            base_items = list(furniture_keywords)[:3]
-            for item in base_items:
-                if style_keywords:
-                    search_queries.append(f"{item} {style_keywords[0]}")
-                else:
-                    search_queries.append(item)
-        else:
-            search_queries = ["vintage bureau", "design stoel", "teak tafel"]
+        for item in list(furniture_keywords)[:3]:
+            if style_keywords:
+                search_queries.append(f"{item} {style_keywords[0]}")
+            else:
+                search_queries.append(item)
         
-        logger.info(f"Search queries: {search_queries}")
+        logger.info(f"Pinterest URL-based search queries: {search_queries}")
         
         # Search Marktplaats
         all_pieces = []
