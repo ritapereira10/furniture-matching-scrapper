@@ -13,6 +13,15 @@ from typing import Optional, List
 import logging
 import os
 
+from pinterest_scraper import get_pinterest_images, extract_style_hints_from_url
+from ai_client import (
+    extract_style,
+    retrieve_candidates,
+    explain_matches,
+    style_profile_to_queries,
+    refine_style
+)
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -353,134 +362,167 @@ def generate_specific_queries(furniture_types, aesthetics, materials):
     
     return list(set(queries))[:5]  # Dedupe and limit to 5
 
+CITY_POSTCODES = {
+    "amsterdam": "1012AB",
+    "rotterdam": "3011AD",
+    "den-haag": "2511AA",
+    "utrecht": "3511AA",
+    "eindhoven": "5611AA",
+    "groningen": "9711AA",
+    "tilburg": "5011AA",
+    "almere": "1311AA"
+}
+
+def search_marktplaats_listings(queries: list, city: str = "amsterdam", max_per_query: int = 8) -> list:
+    """Search Marktplaats and return raw listing data."""
+    postcode = CITY_POSTCODES.get(city, "1012AB")
+    all_listings = []
+    seen_ids = set()
+    
+    for query in queries[:6]:
+        try:
+            search_url = f"{BASE}/z.html"
+            params = {
+                "query": query,
+                "postcode": postcode,
+                "distanceMeters": 10000
+            }
+            logger.info(f"Searching {city} ({postcode}): {query}")
+            
+            resp = requests.get(search_url, params=params, headers=HEADERS, timeout=10)
+            soup = BeautifulSoup(resp.content, "lxml")
+            
+            listings = soup.select(SEL["card"])[:max_per_query]
+            
+            if len(listings) == 0:
+                alt_selectors = ["li[data-testid='listing-item']", "article[data-testid='listing']", ".hz-Listing"]
+                for alt_sel in alt_selectors:
+                    listings = soup.select(alt_sel)
+                    if len(listings) > 0:
+                        break
+            
+            for listing in listings:
+                title_el = listing.select_one(SEL["title"]) or listing.select_one("h3")
+                price_el = listing.select_one(SEL["price"])
+                img_el = listing.select_one(SEL["image"])
+                link_el = listing.select_one(SEL["link"])
+                loc_el = listing.select_one(SEL["location"])
+                desc_el = listing.select_one(SEL["desc"])
+                
+                if not title_el or not link_el:
+                    continue
+                
+                href = link_el.get("href", "")
+                listing_id = re.search(r'/a(\d+)', href)
+                lid = listing_id.group(1) if listing_id else href
+                
+                if lid in seen_ids:
+                    continue
+                seen_ids.add(lid)
+                
+                title = title_el.get_text(strip=True)
+                price_text = price_el.get_text(strip=True) if price_el else "Prijs op aanvraag"
+                image_url = img_el.get("src") if img_el and img_el.has_attr("src") else None
+                listing_url = urljoin(BASE, href)
+                location = loc_el.get_text(strip=True) if loc_el else city.capitalize()
+                description = desc_el.get_text(strip=True)[:200] if desc_el else ""
+                
+                all_listings.append({
+                    "id": lid,
+                    "title": title,
+                    "price": price_text,
+                    "image": image_url,
+                    "url": listing_url,
+                    "location": location,
+                    "description": description
+                })
+                
+        except Exception as e:
+            logger.error(f"Search failed for '{query}': {e}")
+            continue
+    
+    return all_listings
+
 @app.post("/curate-pinterest")
 async def curate_pinterest(request: PinterestRequest):
     """
-    Curate furniture from Pinterest board aesthetic
-    Uses URL-based style extraction since Playwright browser dependencies aren't available
+    AI-powered Pinterest board curation.
+    1. Fetches images from Pinterest board
+    2. Uses vision AI to extract style profile
+    3. Generates targeted Dutch search queries
+    4. Searches Marktplaats
+    5. Re-ranks by semantic similarity
+    6. Adds AI explanations for top matches
     """
     try:
         pinterest_url = request.url
-        logger.info(f"Curating from Pinterest URL: {pinterest_url}")
+        logger.info(f"AI-powered curation from Pinterest: {pinterest_url}")
         
-        # Extract style hints from URL
-        url_lower = pinterest_url.lower()
-        furniture_keywords = set()
+        use_ai = True
+        style_profile = None
         
-        # Detect furniture types from URL
-        if any(word in url_lower for word in ["office", "workspace", "desk", "study", "bureau"]):
-            furniture_keywords.update(["bureau", "stoel"])
-        if any(word in url_lower for word in ["dining", "eetkamer", "table", "tafel"]):
-            furniture_keywords.update(["eettafel", "eetkamerstoel"])
-        if any(word in url_lower for word in ["living", "woonkamer", "sofa", "bank"]):
-            furniture_keywords.update(["bank", "salontafel", "kast"])
-        if any(word in url_lower for word in ["bedroom", "slaapkamer", "bed"]):
-            furniture_keywords.update(["bed", "nachtkastje"])
-        if any(word in url_lower for word in ["shelv", "kast", "storage", "opberg"]):
-            furniture_keywords.update(["kast", "boekenkast"])
+        pinterest_images = get_pinterest_images(pinterest_url, max_images=10)
         
-        # Default to common vintage furniture if nothing detected
-        if not furniture_keywords:
-            furniture_keywords = {"bureau", "stoel", "kast"}
+        if pinterest_images:
+            logger.info(f"Got {len(pinterest_images)} Pinterest images, running vision AI")
+            style_profile = extract_style(pinterest_images)
+            logger.info(f"AI style profile: {style_profile}")
+        else:
+            logger.warning("No Pinterest images, falling back to URL-based extraction")
+            use_ai = False
+            url_hints = extract_style_hints_from_url(pinterest_url)
+            style_profile = {
+                "styles": url_hints.get("styles", ["vintage"]),
+                "materials": url_hints.get("materials", ["wood"]),
+                "colors": ["natural"],
+                "objects": url_hints.get("objects", ["furniture"]),
+                "vibe_keywords": ["classic"],
+                "avoid": [],
+                "confidence": 0.3
+            }
         
-        # Extract aesthetic keywords
-        aesthetics, materials = extract_aesthetic_keywords(url_lower)
-        
-        # Generate specific search queries
-        search_queries = generate_specific_queries(
-            list(furniture_keywords), 
-            aesthetics, 
-            materials
-        )
-        
-        logger.info(f"Pinterest aesthetic analysis - Styles: {aesthetics}, Materials: {materials}")
+        search_queries = style_profile_to_queries(style_profile)
         logger.info(f"Generated search queries: {search_queries}")
         
-        # Search Marktplaats
-        all_pieces = []
-        # Map cities to postal codes for location filtering
-        city_postcodes = {
-            "amsterdam": "1012AB",
-            "rotterdam": "3011AD",
-            "den-haag": "2511AA",
-            "utrecht": "3511AA",
-            "eindhoven": "5611AA",
-            "groningen": "9711AA",
-            "tilburg": "5011AA",
-            "almere": "1311AA"
-        }
-        postcode = city_postcodes.get(request.city, "1012AB")
+        all_listings = search_marktplaats_listings(search_queries, request.city or "amsterdam")
+        logger.info(f"Found {len(all_listings)} total listings")
         
-        for query in search_queries[:4]:
-            try:
-                # Marktplaats URL format: /z.html with postcode and distance filter
-                search_url = f"{BASE}/z.html"
-                params = {
-                    "query": query,
-                    "postcode": postcode,
-                    "distanceMeters": 10000
-                }
-                logger.info(f"Searching {request.city} ({postcode}): {query}")
-                
-                resp = requests.get(search_url, params=params, headers=HEADERS, timeout=10)
-                soup = BeautifulSoup(resp.content, "lxml")
-                
-                listings = soup.select(SEL["card"])[:5]
-                
-                if len(listings) == 0:
-                    alt_selectors = ["li[data-testid='listing-item']", "article[data-testid='listing']", ".hz-Listing"]
-                    for alt_sel in alt_selectors:
-                        listings = soup.select(alt_sel)
-                        if len(listings) > 0:
-                            break
-                
-                for listing in listings:
-                    title_el = listing.select_one(SEL["title"]) or listing.select_one("h3")
-                    price_el = listing.select_one(SEL["price"])
-                    img_el = listing.select_one(SEL["image"])
-                    link_el = listing.select_one(SEL["link"])
-                    loc_el = listing.select_one(SEL["location"])
-                    desc_el = listing.select_one(SEL["desc"])
-                    
-                    if not title_el or not link_el:
-                        continue
-                    
-                    title = title_el.get_text(strip=True)
-                    price_text = price_el.get_text(strip=True) if price_el else "Prijs op aanvraag"
-                    image_url = img_el.get("src") if img_el and img_el.has_attr("src") else None
-                    listing_url = urljoin(BASE, link_el["href"])
-                    location = loc_el.get_text(strip=True) if loc_el else "Amsterdam"
-                    description = desc_el.get_text(strip=True)[:120] if desc_el else "Vintage find from Amsterdam's marketplace"
-                    
-                    all_pieces.append({
-                        "title": title,
-                        "price": price_text,
-                        "image": image_url,
-                        "url": listing_url,
-                        "location": location,
-                        "description": description
-                    })
-                    
-            except Exception as e:
-                logger.error(f"Search failed for '{query}': {e}")
-                continue
+        if not all_listings:
+            return {
+                "title": "No Matches Found",
+                "description": "We couldn't find any items matching your aesthetic. Try a different Pinterest board or check back later.",
+                "pieces": [],
+                "style_profile": style_profile,
+                "ai_powered": use_ai
+            }
         
-        # Create curated response with specific style description
-        if "scandinavian" in aesthetics:
-            style_desc = "Scandinavian aesthetic"
-        elif "mid_century" in aesthetics:
-            style_desc = "mid-century modern aesthetic"
-        elif "industrial" in aesthetics:
-            style_desc = "industrial aesthetic"
-        elif "minimalist" in aesthetics:
-            style_desc = "minimalist aesthetic"
+        if use_ai and len(all_listings) > 5:
+            top_candidates = retrieve_candidates(style_profile, all_listings, top_k=15)
+            logger.info(f"Re-ranked to {len(top_candidates)} top candidates")
         else:
-            style_desc = "design aesthetic"
+            top_candidates = all_listings[:15]
+        
+        final_pieces = top_candidates[:12]
+        
+        if use_ai and len(final_pieces) > 0:
+            try:
+                final_pieces = explain_matches(style_profile, final_pieces[:8])
+                logger.info("Added AI explanations to top matches")
+            except Exception as e:
+                logger.warning(f"Explanation generation failed: {e}")
+        
+        style_names = style_profile.get("styles", [])
+        if style_names:
+            style_desc = ", ".join(style_names[:2]) + " aesthetic"
+        else:
+            style_desc = "curated aesthetic"
         
         return {
             "title": "Your Curated Collection",
-            "description": f"We've analyzed your Pinterest board and found {len(all_pieces)} pieces that match your {style_desc}.",
-            "pieces": all_pieces[:12]
+            "description": f"We analyzed your Pinterest board and found {len(final_pieces)} pieces that match your {style_desc}.",
+            "pieces": final_pieces,
+            "style_profile": style_profile,
+            "ai_powered": use_ai
         }
         
     except Exception as e:
@@ -490,125 +532,143 @@ async def curate_pinterest(request: PinterestRequest):
 @app.post("/curate-natural")
 async def curate_natural(request: NaturalRequest):
     """
-    Curate furniture from natural language description
+    AI-powered natural language curation.
+    Converts description to style profile and searches accordingly.
     """
     try:
         description = request.description.lower()
         logger.info(f"Curating from description: {description[:100]}...")
         
-        # Extract furniture types
         furniture_map = {
-            "desk": "bureau", "bureau": "bureau",
-            "chair": "stoel", "stoel": "stoel",
-            "table": "tafel", "tafel": "tafel",
-            "cabinet": "kast", "kast": "kast",
-            "shelf": "rek", "shelving": "rek", "rek": "rek",
-            "sofa": "bank", "couch": "bank", "bank": "bank",
+            "desk": "desk", "bureau": "desk",
+            "chair": "chair", "stoel": "chair",
+            "table": "dining table", "tafel": "dining table",
+            "cabinet": "cabinet", "kast": "cabinet",
+            "shelf": "shelf", "shelving": "shelf", "rek": "shelf",
+            "sofa": "sofa", "couch": "sofa", "bank": "sofa",
             "lamp": "lamp", "lighting": "lamp",
-            "dresser": "dressoir", "dressoir": "dressoir",
-            "storage": "opbergruimte", "opslag": "opbergruimte",
-            "dining": "eettafel", "eettafel": "eettafel"
+            "dresser": "dresser", "dressoir": "dresser",
+            "storage": "cabinet", "opslag": "cabinet",
+            "dining": "dining table", "eettafel": "dining table",
+            "bed": "bed", "slaapkamer": "bed"
         }
         
-        furniture_items = []
-        for eng, nl in furniture_map.items():
+        found_objects = []
+        for eng, obj_type in furniture_map.items():
             if eng in description:
-                furniture_items.append(nl)
+                found_objects.append(obj_type)
         
-        if not furniture_items:
-            furniture_items = ["meubels"]
+        if not found_objects:
+            found_objects = ["furniture"]
         
-        # Use improved aesthetic extraction
-        aesthetics, materials = extract_aesthetic_keywords(description)
+        aesthetics, mat = extract_aesthetic_keywords(description)
         
-        # Generate specific search queries
-        search_queries = generate_specific_queries(
-            list(set(furniture_items)),  # Dedupe furniture items
-            aesthetics,
-            materials
-        )
+        style_profile = {
+            "styles": [a.replace("_", "-") for a in aesthetics] if aesthetics else ["vintage"],
+            "materials": mat if mat else ["wood"],
+            "colors": ["natural"],
+            "objects": list(set(found_objects)),
+            "vibe_keywords": ["curated"],
+            "avoid": [],
+            "confidence": 0.6
+        }
         
-        logger.info(f"Natural language aesthetic analysis - Styles: {aesthetics}, Materials: {materials}")
+        search_queries = style_profile_to_queries(style_profile)
+        logger.info(f"Natural language style profile: {style_profile}")
         logger.info(f"Generated search queries: {search_queries}")
         
-        # Search Marktplaats
-        all_pieces = []
-        # Map cities to postal codes for location filtering
-        city_postcodes = {
-            "amsterdam": "1012AB",
-            "rotterdam": "3011AD",
-            "den-haag": "2511AA",
-            "utrecht": "3511AA",
-            "eindhoven": "5611AA",
-            "groningen": "9711AA",
-            "tilburg": "5011AA",
-            "almere": "1311AA"
-        }
-        postcode = city_postcodes.get(request.city, "1012AB")
+        all_listings = search_marktplaats_listings(search_queries, request.city or "amsterdam")
+        logger.info(f"Found {len(all_listings)} listings")
         
-        for query in search_queries[:5]:
+        if not all_listings:
+            return {
+                "title": "No Matches Found",
+                "description": "We couldn't find any items matching your description. Try different keywords or check back later.",
+                "pieces": [],
+                "style_profile": style_profile
+            }
+        
+        if len(all_listings) > 5:
+            top_candidates = retrieve_candidates(style_profile, all_listings, top_k=15)
+        else:
+            top_candidates = all_listings
+        
+        final_pieces = top_candidates[:12]
+        
+        if len(final_pieces) > 0:
             try:
-                # Marktplaats URL format: /z.html with postcode and distance filter
-                search_url = f"{BASE}/z.html"
-                params = {
-                    "query": query,
-                    "postcode": postcode,
-                    "distanceMeters": 10000
-                }
-                logger.info(f"Searching {request.city} ({postcode}): {query}")
-                
-                resp = requests.get(search_url, params=params, headers=HEADERS, timeout=10)
-                soup = BeautifulSoup(resp.content, "lxml")
-                
-                listings = soup.select(SEL["card"])[:6]
-                
-                if len(listings) == 0:
-                    alt_selectors = ["li[data-testid='listing-item']", "article[data-testid='listing']", ".hz-Listing"]
-                    for alt_sel in alt_selectors:
-                        listings = soup.select(alt_sel)
-                        if len(listings) > 0:
-                            break
-                
-                for listing in listings:
-                    title_el = listing.select_one(SEL["title"]) or listing.select_one("h3")
-                    price_el = listing.select_one(SEL["price"])
-                    img_el = listing.select_one(SEL["image"])
-                    link_el = listing.select_one(SEL["link"])
-                    loc_el = listing.select_one(SEL["location"])
-                    desc_el = listing.select_one(SEL["desc"])
-                    
-                    if not title_el or not link_el:
-                        continue
-                    
-                    title = title_el.get_text(strip=True)
-                    price_text = price_el.get_text(strip=True) if price_el else "Prijs op aanvraag"
-                    image_url = img_el.get("src") if img_el and img_el.has_attr("src") else None
-                    listing_url = urljoin(BASE, link_el["href"])
-                    location = loc_el.get_text(strip=True) if loc_el else "Amsterdam"
-                    description = desc_el.get_text(strip=True)[:120] if desc_el else "Vintage piece from Amsterdam's marketplace"
-                    
-                    all_pieces.append({
-                        "title": title,
-                        "price": price_text,
-                        "image": image_url,
-                        "url": listing_url,
-                        "location": location,
-                        "description": description
-                    })
-                    
+                final_pieces = explain_matches(style_profile, final_pieces[:8])
             except Exception as e:
-                logger.error(f"Search failed for '{query}': {e}")
-                continue
+                logger.warning(f"Explanation generation failed: {e}")
         
         return {
             "title": "Your Personalized Collection",
-            "description": f"Based on your vision, we've curated {len(all_pieces)} exceptional pieces that bring your dream space to life.",
-            "pieces": all_pieces[:12]
+            "description": f"Based on your vision, we've curated {len(final_pieces)} pieces that bring your dream space to life.",
+            "pieces": final_pieces,
+            "style_profile": style_profile
         }
         
     except Exception as e:
         logger.error(f"Natural language curation failed: {e}")
         return {"error": "Failed to curate collection", "details": str(e)}
+
+
+class RefineRequest(BaseModel):
+    style_profile: dict
+    constraints: Optional[dict] = {}
+    message: str
+    city: Optional[str] = "amsterdam"
+
+@app.post("/refine")
+async def refine_results(request: RefineRequest):
+    """
+    Refine search results based on user feedback.
+    Updates style profile and/or constraints and re-searches.
+    """
+    try:
+        logger.info(f"Refining with message: {request.message}")
+        
+        updated_style, updated_constraints = refine_style(
+            request.style_profile,
+            request.constraints or {},
+            request.message
+        )
+        
+        search_queries = style_profile_to_queries(updated_style)
+        all_listings = search_marktplaats_listings(search_queries, request.city or "amsterdam")
+        
+        price_max = updated_constraints.get("price_max")
+        if price_max:
+            filtered = []
+            for listing in all_listings:
+                price_text = listing.get("price", "")
+                try:
+                    price_num = float(re.sub(r'[^\d.]', '', price_text.replace(',', '.')))
+                    if price_num <= price_max:
+                        filtered.append(listing)
+                except:
+                    filtered.append(listing)
+            all_listings = filtered
+        
+        if len(all_listings) > 5:
+            top_candidates = retrieve_candidates(updated_style, all_listings, top_k=15)
+        else:
+            top_candidates = all_listings
+        
+        final_pieces = top_candidates[:12]
+        
+        return {
+            "title": "Refined Collection",
+            "description": f"Based on your feedback, we found {len(final_pieces)} updated matches.",
+            "pieces": final_pieces,
+            "style_profile": updated_style,
+            "constraints": updated_constraints
+        }
+        
+    except Exception as e:
+        logger.error(f"Refinement failed: {e}")
+        return {"error": "Failed to refine results", "details": str(e)}
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)

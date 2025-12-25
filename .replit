@@ -3,7 +3,7 @@ modules = ["python-3.11"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["geckodriver", "gitFull", "glibcLocales", "jq", "playwright-driver", "xcodebuild", "zlib"]
+packages = ["geckodriver", "gitFull", "glibcLocales", "jq", "libxcrypt", "playwright-driver", "xcodebuild", "zlib"]
 
 [unitTest]
 language = "python3"
@@ -18,10 +18,6 @@ deploymentTarget = "autoscale"
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 43715
-externalPort = 3000
 
 
 [workflows]
@@ -59,3 +55,4 @@ outputType = "webview"
 
 [agent]
 expertMode = true
+integrations = ["python_openai_ai_integrations:1.0.0"]
