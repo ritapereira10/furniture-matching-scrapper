@@ -1,0 +1,249 @@
+Step 0: Lock the architecture you are building
+
+You are adding AI in three seams only:
+
+Taste extraction from Pinterest images
+
+Semantic matching (embeddings + vector search) for listings
+
+Explainability + refinement (LLM) on top results
+
+Everything else stays deterministic: scraping, filters, dedupe, recency, location.
+
+Step 1: Pick the minimum AI provider setup
+
+You need one provider that can do:
+
+Vision (image → structured style)
+
+Embeddings (text/image → vectors)
+
+LLM text (explanations + chat)
+
+Implementation rule: keep it swappable behind a single ai_client.py.
+
+Deliverable
+
+AI_PROVIDER env var
+
+AI_API_KEY secret in Replit
+
+ai_client.py with 3 functions:
+
+extract_style(images)
+
+embed(items)
+
+explain_match(style, listing)
+
+Step 2: Add Pinterest image ingestion (real signal)
+
+Right now you are using the Pinterest URL text. Replace that with actual images.
+
+Implementation
+
+Given a Pinterest board URL:
+
+Fetch board page (or use a lightweight extraction approach you already have)
+
+Extract top N image URLs (start with 10)
+
+Download and store temporarily in memory or /tmp
+
+Guardrails
+
+Hard cap number of images
+
+Cache by board URL hash
+
+Deliverable
+
+get_pinterest_images(board_url) -> [image_bytes]
+
+Step 3: Implement AI taste extraction (vision → structured intent)
+
+This is the first model call that actually changes the product.
+
+Output schema (keep it strict)
+
+Return JSON only:
+
+styles: ["mid-century modern", "scandinavian"]
+
+materials: ["oak", "teak", "linen"]
+
+colors: ["warm wood", "cream", "black accents"]
+
+objects: ["dining table", "floor lamp"]
+
+vibe_keywords: ["minimal", "warm", "clean lines"]
+
+avoid: ["high gloss", "ornate"]
+
+confidence: 0–1 per field
+
+Deliverable
+
+style_profile = extract_style(pinterest_images)
+
+Why strict JSON
+
+You need something you can:
+
+log
+
+debug
+
+reuse for search queries and embeddings
+Not paragraphs.
+
+Step 4: Turn the style profile into better deterministic queries (bridge step)
+
+Before embeddings, use AI output to improve your current system.
+
+Implementation
+
+Map style_profile → Dutch search terms
+
+Keep your existing query builder, just feed it better terms
+
+Example:
+
+“mid-century modern”, “teak”, “dressoir”, “vintage”, “Deens design”, “retro”
+
+Deliverable
+
+queries = build_queries(style_profile)
+
+This should already boost relevance without changing retrieval infra.
+
+Step 5: Add embeddings-based retrieval (real matching)
+
+This is the second big upgrade.
+
+What gets embedded
+
+Listing text: title + description
+
+Optional later: listing images
+
+Store
+
+Use a simple vector store first:
+
+local faiss or lightweight in-memory cosine similarity if dataset is small
+
+only upgrade to hosted vector DB if needed
+
+Pipeline
+
+Scrape listings (your current step)
+
+Normalize listing text
+
+vectors = embed(listings_text)
+
+Store vectors with listing IDs
+
+query_vector = embed(style_profile_as_text)
+
+Retrieve top K by similarity
+
+Deliverable
+
+retrieve_candidates(style_profile, listings) -> top_k_listings
+
+Step 6: Re-rank with constraints (keep relevance sane)
+
+Embeddings will pull “close” results, but you still need deterministic rules.
+
+Deterministic constraints
+
+price ceiling
+
+distance
+
+recency
+
+category/object must match (table vs lamp)
+
+exclude avoid-list keywords
+
+Deliverable
+
+final = rerank_and_filter(top_k, constraints, style_profile)
+
+This prevents “pretty but wrong” matches.
+
+Step 7: Add explainability (LLM only on the final shortlist)
+
+Do not run LLM over thousands of listings. Only over the final 10–20.
+
+Output format per item
+
+1 sentence “why this matches”
+
+1 sentence “tradeoff / uncertainty”
+
+3 bullet attributes matched (materials, shape, era)
+
+Deliverable
+
+enriched_results = explain_matches(style_profile, final_listings)
+
+Step 8: Add conversational refinement (cheap loop)
+
+This is the UX layer.
+
+How it works
+
+User says: “More minimalist, under €250, only Amsterdam”
+
+Convert that into updated constraints + a tiny style tweak
+
+Re-run: retrieval (optionally) or rerank (usually enough)
+
+Important rule
+
+Refinements should update constraints first, and only then “style”
+Otherwise the model will drift.
+
+Deliverable
+
+refine(style_profile, constraints, user_message) -> updated_style_profile, updated_constraints
+
+Step 9: Evaluation (you need this for the course)
+
+Set up a small eval set from real boards + expected outcomes.
+
+Minimum eval set
+
+10 Pinterest boards
+
+For each: 20 scraped listings
+
+Human-labeled “good match / not match” for top 10
+
+Metrics
+
+Precision@10 (how many of top 10 are good)
+
+“Explanation trust” rating (1–5)
+
+Deliverable
+
+eval_runner.py that runs pipeline on test set and prints metrics
+
+Step 10: Fallback strategy (so the product never breaks)
+
+If AI fails:
+
+Use your current keyword pipeline
+
+Return results with a banner “Using basic matching”
+
+Deliverable
+
+try/catch around model calls
+
+cached last good style profile
