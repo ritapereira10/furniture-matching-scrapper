@@ -378,8 +378,37 @@ CITY_POSTCODES = {
     "almere": "1311AA"
 }
 
+CITY_REGIONS = {
+    "amsterdam": ["amsterdam", "amstelveen", "diemen", "ouderkerk", "duivendrecht", "zaandam", "weesp", "abcoude", "uithoorn", "aalsmeer", "hoofddorp", "badhoevedorp", "schiphol"],
+    "rotterdam": ["rotterdam", "schiedam", "vlaardingen", "capelle", "ridderkerk", "barendrecht", "spijkenisse", "hoogvliet", "pernis", "delfshaven"],
+    "den-haag": ["den haag", "'s-gravenhage", "rijswijk", "voorburg", "leidschendam", "wassenaar", "delft", "zoetermeer", "loosduinen"],
+    "utrecht": ["utrecht", "nieuwegein", "ijsselstein", "houten", "zeist", "de bilt", "bunnik", "maarssen", "bilthoven"],
+    "eindhoven": ["eindhoven", "veldhoven", "geldrop", "nuenen", "best", "son", "waalre", "valkenswaard"],
+    "groningen": ["groningen", "haren", "hoogezand", "zuidhorn", "leek", "roden"],
+    "tilburg": ["tilburg", "goirle", "oisterwijk", "gilze", "rijen", "dongen", "waalwijk"],
+    "almere": ["almere", "lelystad", "huizen", "naarden", "bussum", "hilversum", "muiden"]
+}
+
+def is_location_in_city_region(location: str, city: str) -> bool:
+    """Check if a location string matches the city or nearby areas within ~20km."""
+    if not location:
+        return True
+    
+    location_lower = location.lower().strip()
+    city_lower = city.lower()
+    
+    if city_lower in location_lower:
+        return True
+    
+    allowed_areas = CITY_REGIONS.get(city_lower, [city_lower])
+    for area in allowed_areas:
+        if area in location_lower:
+            return True
+    
+    return False
+
 def search_marktplaats_listings(queries: list, city: str = "amsterdam", max_per_query: int = 8) -> list:
-    """Search Marktplaats and return raw listing data."""
+    """Search Marktplaats and return raw listing data within 20km of city."""
     postcode = CITY_POSTCODES.get(city, "1012AB")
     all_listings = []
     seen_ids = set()
@@ -390,7 +419,7 @@ def search_marktplaats_listings(queries: list, city: str = "amsterdam", max_per_
             params = {
                 "query": query,
                 "postcode": postcode,
-                "distanceMeters": 10000
+                "distanceMeters": 20000
             }
             logger.info(f"Searching {city} ({postcode}): {query}")
             
@@ -432,6 +461,10 @@ def search_marktplaats_listings(queries: list, city: str = "amsterdam", max_per_
                 location = loc_el.get_text(strip=True) if loc_el else city.capitalize()
                 description = desc_el.get_text(strip=True)[:200] if desc_el else ""
                 
+                if not is_location_in_city_region(location, city):
+                    logger.debug(f"Filtered out item outside region: {location} (searching {city})")
+                    continue
+                
                 all_listings.append({
                     "id": lid,
                     "title": title,
@@ -446,6 +479,7 @@ def search_marktplaats_listings(queries: list, city: str = "amsterdam", max_per_
             logger.error(f"Search failed for '{query}': {e}")
             continue
     
+    logger.info(f"After location filtering: {len(all_listings)} listings in {city} region")
     return all_listings
 
 @app.post("/curate-pinterest")
