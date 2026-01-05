@@ -19,7 +19,8 @@ from ai_client import (
     retrieve_candidates,
     explain_matches,
     style_profile_to_queries,
-    refine_style
+    refine_style,
+    translate_titles_batch
 )
 
 # Set up logging
@@ -276,10 +277,12 @@ def health_check():
 class PinterestRequest(BaseModel):
     url: str
     city: Optional[str] = "amsterdam"
+    language: Optional[str] = "en"
 
 class NaturalRequest(BaseModel):
     description: str
     city: Optional[str] = "amsterdam"
+    language: Optional[str] = "en"
 
 def extract_aesthetic_keywords(text_lower):
     """Extract specific aesthetic/style keywords from text"""
@@ -511,6 +514,19 @@ async def curate_pinterest(request: PinterestRequest):
             except Exception as e:
                 logger.warning(f"Explanation generation failed: {e}")
         
+        target_lang = request.language or "en"
+        if target_lang != "nl" and final_pieces:
+            try:
+                titles = [p.get("title", "") for p in final_pieces]
+                translated = translate_titles_batch(titles, target_lang)
+                for i, piece in enumerate(final_pieces):
+                    if i < len(translated):
+                        piece["title_translated"] = translated[i]
+                        piece["title_original"] = piece.get("title", "")
+                logger.info(f"Translated {len(translated)} titles to {target_lang}")
+            except Exception as e:
+                logger.warning(f"Title translation failed: {e}")
+        
         style_names = style_profile.get("styles", [])
         if style_names:
             style_desc = ", ".join(style_names[:2]) + " aesthetic"
@@ -522,7 +538,8 @@ async def curate_pinterest(request: PinterestRequest):
             "description": f"We analyzed your Pinterest board and found {len(final_pieces)} pieces that match your {style_desc}.",
             "pieces": final_pieces,
             "style_profile": style_profile,
-            "ai_powered": use_ai
+            "ai_powered": use_ai,
+            "pinterest_images": pinterest_images[:6] if pinterest_images else []
         }
         
     except Exception as e:
@@ -600,6 +617,18 @@ async def curate_natural(request: NaturalRequest):
                 final_pieces = explain_matches(style_profile, final_pieces[:8])
             except Exception as e:
                 logger.warning(f"Explanation generation failed: {e}")
+        
+        target_lang = request.language or "en"
+        if target_lang != "nl" and final_pieces:
+            try:
+                titles = [p.get("title", "") for p in final_pieces]
+                translated = translate_titles_batch(titles, target_lang)
+                for i, piece in enumerate(final_pieces):
+                    if i < len(translated):
+                        piece["title_translated"] = translated[i]
+                        piece["title_original"] = piece.get("title", "")
+            except Exception as e:
+                logger.warning(f"Title translation failed: {e}")
         
         return {
             "title": "Your Personalized Collection",

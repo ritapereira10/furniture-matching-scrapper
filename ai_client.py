@@ -535,3 +535,106 @@ Constraint changes should be prioritized over style changes. Only modify what th
     except Exception as e:
         logger.error(f"Refinement failed: {e}")
         return updated_style, updated_constraints
+
+
+def translate_title(title: str, target_language: str = "en") -> str:
+    """
+    Translate a title from Dutch to the target language.
+    
+    Args:
+        title: The title to translate (likely in Dutch)
+        target_language: Target language code (en, nl, pt, de, fr)
+    
+    Returns:
+        Translated title, or original if translation fails
+    """
+    if target_language == "nl":
+        return title
+    
+    if not openai_client:
+        return title
+    
+    lang_names = {
+        "en": "English",
+        "pt": "Portuguese",
+        "de": "German",
+        "fr": "French"
+    }
+    
+    target_lang_name = lang_names.get(target_language, "English")
+    
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{
+                "role": "user",
+                "content": f"Translate this Dutch furniture listing title to {target_lang_name}. Only return the translated title, nothing else.\n\nTitle: {title}"
+            }],
+            max_tokens=100
+        )
+        
+        translated = response.choices[0].message.content.strip()
+        return translated if translated else title
+        
+    except Exception as e:
+        logger.warning(f"Translation failed for '{title}': {e}")
+        return title
+
+
+def translate_titles_batch(titles: list[str], target_language: str = "en") -> list[str]:
+    """
+    Translate multiple titles from Dutch to target language in batch.
+    
+    Args:
+        titles: List of titles to translate
+        target_language: Target language code
+    
+    Returns:
+        List of translated titles
+    """
+    if target_language == "nl" or not titles:
+        return titles
+    
+    if not openai_client:
+        return titles
+    
+    lang_names = {
+        "en": "English",
+        "pt": "Portuguese", 
+        "de": "German",
+        "fr": "French"
+    }
+    
+    target_lang_name = lang_names.get(target_language, "English")
+    numbered_titles = "\n".join([f"{i+1}. {t}" for i, t in enumerate(titles)])
+    
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{
+                "role": "user",
+                "content": f"""Translate these Dutch furniture listing titles to {target_lang_name}. 
+Return ONLY the translated titles, one per line, keeping the same numbering format.
+
+{numbered_titles}"""
+            }],
+            max_tokens=500
+        )
+        
+        result = response.choices[0].message.content.strip()
+        translated_lines = result.split("\n")
+        
+        translated = []
+        for line in translated_lines:
+            clean = re.sub(r'^\d+\.\s*', '', line.strip())
+            if clean:
+                translated.append(clean)
+        
+        if len(translated) == len(titles):
+            return translated
+        else:
+            return titles
+        
+    except Exception as e:
+        logger.warning(f"Batch translation failed: {e}")
+        return titles
