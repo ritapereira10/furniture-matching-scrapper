@@ -444,6 +444,88 @@
             border: 1px solid #ddd;
         }
         
+        /* Price Filter */
+        .price-filter-section {
+            display: none;
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            margin: 1rem auto;
+            max-width: 700px;
+        }
+        
+        .price-filter-section.active {
+            display: block;
+        }
+        
+        .price-filter-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .price-filter-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .price-filter-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+        }
+        
+        .price-slider {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #ddd;
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        .price-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #333;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .price-display {
+            font-size: 0.9rem;
+            font-weight: 700;
+            min-width: 70px;
+            text-align: right;
+        }
+        
+        .price-apply-btn {
+            padding: 0.5rem 1rem;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        
+        .price-apply-btn:hover {
+            background: #555;
+        }
+        
+        .price-filter-info {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+        
         /* Explainability on Cards */
         .piece-explanation {
             background: #f8f9fa;
@@ -1060,14 +1142,17 @@
             </div>
         </div>
         
-        <!-- Refinement Chat - Compact -->
-        <div class="refine-section" id="refine-section" style="display: none;">
-            <div class="refine-title" data-i18n="refine-title">💬 Refine Your Results</div>
-            <div class="refine-form">
-                <input type="text" class="refine-input" id="refine-input" data-i18n-placeholder="refine-placeholder" placeholder="More minimalist, under €250, only Amsterdam...">
-                <button class="refine-btn chunky" onclick="refineResults()" data-i18n="refine-btn">Update</button>
+        <!-- Price Filter -->
+        <div class="price-filter-section" id="price-filter-section">
+            <div class="price-filter-row">
+                <span class="price-filter-label" data-i18n="price-label">💰 Max budget:</span>
+                <div class="price-filter-controls">
+                    <input type="range" id="price-slider" min="0" max="1000" value="1000" class="price-slider" oninput="updatePriceDisplay()">
+                    <span class="price-display" id="price-display">€1000+</span>
+                </div>
+                <button class="price-apply-btn" onclick="applyPriceFilter()" data-i18n="price-apply">Apply</button>
             </div>
-            <div class="refine-changes" id="refine-changes"></div>
+            <div class="price-filter-info" id="price-filter-info"></div>
         </div>
         
         <div class="collection" id="collection"></div>
@@ -1596,6 +1681,12 @@
                 
                 document.getElementById('showroom').classList.add('active');
                 
+                // Show price filter
+                document.getElementById('price-filter-section').classList.add('active');
+                document.getElementById('price-slider').value = 1000;
+                document.getElementById('price-display').textContent = '€1000+';
+                document.getElementById('price-filter-info').textContent = `Showing ${data.pieces.length} items`;
+                
                 // Scroll to showroom smoothly
                 document.getElementById('showroom').scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 2000);
@@ -1744,6 +1835,89 @@
                 }
             }
             return price;
+        }
+        
+        function extractNumericPrice(priceStr) {
+            if (!priceStr) return null;
+            const nonNumeric = ['Bieden', 'Op aanvraag', 'Gratis', 'Zie omschrijving', 'Make offer', 'On request', 'Free', 'See description'];
+            for (const term of nonNumeric) {
+                if (priceStr.includes(term)) return null;
+            }
+            const match = priceStr.replace(/[^\d,\.]/g, '').replace(',', '.');
+            const num = parseFloat(match);
+            return isNaN(num) ? null : num;
+        }
+        
+        function updatePriceDisplay() {
+            const slider = document.getElementById('price-slider');
+            const display = document.getElementById('price-display');
+            const val = parseInt(slider.value);
+            if (val >= 1000) {
+                display.textContent = '€1000+';
+            } else {
+                display.textContent = '€' + val;
+            }
+        }
+        
+        function applyPriceFilter() {
+            if (!currentData || !currentData.pieces) return;
+            
+            const maxPrice = parseInt(document.getElementById('price-slider').value);
+            const lang = localStorage.getItem('preferredLanguage') || 'en';
+            const collectionDiv = document.getElementById('collection');
+            const infoDiv = document.getElementById('price-filter-info');
+            
+            let filtered = currentData.pieces.filter(piece => {
+                const numPrice = extractNumericPrice(piece.price);
+                if (numPrice === null) return true;
+                if (maxPrice >= 1000) return true;
+                return numPrice <= maxPrice;
+            });
+            
+            collectionDiv.innerHTML = '';
+            
+            if (filtered.length === 0) {
+                infoDiv.textContent = 'No items found in this budget. Try increasing your max price.';
+                return;
+            }
+            
+            infoDiv.textContent = `Showing ${filtered.length} of ${currentData.pieces.length} items`;
+            
+            filtered.forEach(piece => {
+                const pieceEl = document.createElement('div');
+                pieceEl.className = 'piece';
+                const displayTitle = piece.title_translated || piece.title;
+                const displayPrice = translatePrice(piece.price, lang);
+                
+                let explanationHtml = '';
+                if (piece.explanation) {
+                    const exp = piece.explanation;
+                    const chipsHtml = (exp.matched_attributes || []).map(attr => 
+                        `<span class="matched-chip">${attr}</span>`
+                    ).join('');
+                    explanationHtml = `
+                        <div class="piece-explanation">
+                            <p class="why-matches">"${exp.why_matches || ''}"</p>
+                            ${chipsHtml ? `<div class="matched-chips">${chipsHtml}</div>` : ''}
+                            ${exp.tradeoff ? `<p class="uncertainty-note">${exp.tradeoff}</p>` : ''}
+                        </div>
+                    `;
+                }
+                
+                pieceEl.innerHTML = `
+                    <div class="piece-image-wrapper">
+                        ${piece.image ? `<img src="${piece.image}" alt="${displayTitle}" class="piece-image" onerror="this.style.display='none'">` : ''}
+                        <div class="price-badge">${displayPrice}</div>
+                    </div>
+                    <div class="piece-content">
+                        <h3 class="piece-title chunky">${displayTitle}</h3>
+                        ${piece.location ? `<p class="piece-location">${piece.location}</p>` : ''}
+                        <a href="${piece.url}" target="_blank" class="piece-action chunky">View Item 👀</a>
+                        ${explanationHtml}
+                    </div>
+                `;
+                collectionDiv.appendChild(pieceEl);
+            });
         }
     </script>
 </body>
