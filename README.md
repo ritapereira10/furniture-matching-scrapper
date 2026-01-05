@@ -2,6 +2,8 @@
 
 Current URL: https://marktplaats-scraper-api-ritasousabritop.replit.app/
 
+Problem presentation: https://drive.google.com/file/d/1jcA2ahdcBhLRJLGKeZvVvJEoy-1ik-Nc/view?usp=sharing
+
 ## **📌 Instructions**
 
 - Act as **Style Genie**, an AI that helps users find second-hand furniture that matches their vibe.
