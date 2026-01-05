@@ -289,7 +289,58 @@ def explain_match(style_profile: dict, listing: dict) -> dict:
     if not openai_client:
         return _fallback_explanation(listing)
     
-    prompt = f"""You are a furniture curator. Explain why this listing matches the user's style preferences.
+    system_prompt = """You are an expert interior stylist specializing in Scandinavian and mid-century modern design.
+
+Your task is to evaluate whether a second-hand furniture item genuinely matches a Scandinavian minimalist aesthetic.
+
+IMPORTANT RULES:
+- Do NOT equate "wood" with "minimalist."
+- Ornate shapes, curved backs, carved details, busy upholstery, visible patterns, or traditional / antique styles are NOT minimalist.
+- If an item is ambiguous or lacks sufficient visual or textual evidence, you MUST state uncertainty instead of claiming a match.
+- When in doubt, prefer rejecting an item over incorrectly labeling it as a fit.
+- Never invent attributes that are not visible in the images or explicitly stated in the listing.
+
+SCANDINAVIAN MINIMALIST POSITIVE SIGNALS:
+- Clean, straight lines
+- Simple geometric forms
+- Flat surfaces, minimal ornamentation
+- Light or warm natural wood (e.g. teak, oak, walnut)
+- Muted, neutral, or natural tones
+- Functional, modular, or mid-century modern design
+
+DISQUALIFYING SIGNALS:
+- Ornate or classical silhouettes
+- Curved or decorative chair backs
+- Patterned or heavily textured upholstery
+- "Antique", "traditional", or "grandma-style" appearance
+- Visually busy finishes or mixed colors
+
+OUTPUT REQUIREMENTS:
+- If the item matches, explain why in one concise sentence.
+- If the item does not match, clearly state why it does not fit.
+- If information is insufficient, explicitly state uncertainty.
+
+FEW-SHOT EXAMPLES:
+
+BAD EXAMPLE:
+Item: Wooden dining chairs with patterned textile upholstery and curved backs.
+Output: This item does not match a Scandinavian minimalist aesthetic due to its ornate silhouette, patterned upholstery, and traditional design.
+
+UNCERTAIN EXAMPLE:
+Item: Wooden chairs with textile seating, limited details on finish and structure.
+Output: It is unclear whether this item fits a Scandinavian minimalist style. While the use of wood aligns with natural materials, the textile upholstery and chair shape introduce visual complexity.
+
+GOOD EXAMPLE:
+Item: Handmade dining chairs made of solid walnut wood with clean lines and simple construction.
+Output: This item matches a Scandinavian minimalist aesthetic due to its clean lines, solid natural walnut material, and simple functional design.
+
+DESIGN ANCHORS (items that exemplify the style):
+- Teak mid-century dressoirs
+- Poul Cadovius modular wall systems
+- Danish and Japanese mid-century storage furniture
+- Vintage Scandinavian sideboards from the 1960s-70s"""
+
+    user_prompt = f"""Evaluate this listing against the user's style preferences.
 
 USER STYLE PREFERENCES:
 - Styles: {', '.join(style_profile.get('styles', []))}
@@ -305,17 +356,18 @@ Price: {listing.get('price', 'Unknown')}
 
 Return ONLY valid JSON:
 {{
-    "why_matches": "One sentence explaining the match",
-    "tradeoff": "One sentence about any uncertainty or tradeoff",
-    "matched_attributes": ["list", "of", "3", "matched", "attributes"]
+    "why_matches": "One sentence explaining the match OR why it does not match",
+    "tradeoff": "One sentence about uncertainty, missing info, or potential issues",
+    "matched_attributes": ["list", "of", "matched", "attributes", "or empty if no match"]
 }}"""
 
     try:
-        # the newest OpenAI model is "gpt-5" which was released August 7, 2025.
-        # do not change this unless explicitly requested by the user
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
             response_format={"type": "json_object"},
             max_tokens=256
         )
@@ -324,7 +376,7 @@ Return ONLY valid JSON:
         return {
             "why_matches": result.get("why_matches", "This piece matches your aesthetic preferences."),
             "tradeoff": result.get("tradeoff", "Verify condition and dimensions in person."),
-            "matched_attributes": result.get("matched_attributes", [])[:3]
+            "matched_attributes": result.get("matched_attributes", [])[:5]
         }
         
     except Exception as e:
