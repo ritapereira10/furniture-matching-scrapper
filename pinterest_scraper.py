@@ -23,6 +23,7 @@ PINTEREST_HEADERS = {
 }
 
 _image_cache: dict[str, list[bytes]] = {}
+_url_cache: dict[str, list[str]] = {}
 
 
 def _get_cache_key(url: str) -> str:
@@ -121,12 +122,31 @@ def get_pinterest_images(board_url: str, max_images: int = 10, use_cache: bool =
         
         if use_cache and images:
             _image_cache[cache_key] = images
+            _url_cache[cache_key] = image_urls[:max_images]
         
         return images[:max_images]
         
     except Exception as e:
         logger.error(f"Pinterest scraping failed: {e}")
         return []
+
+
+def get_pinterest_image_urls(board_url: str, max_urls: int = 6) -> list[str]:
+    """
+    Get Pinterest image URLs for display (without downloading bytes).
+    Must call get_pinterest_images first to populate cache.
+    
+    Args:
+        board_url: Pinterest board URL
+        max_urls: Maximum URLs to return
+    
+    Returns:
+        List of image URLs
+    """
+    cache_key = _get_cache_key(board_url)
+    if cache_key in _url_cache:
+        return _url_cache[cache_key][:max_urls]
+    return []
 
 
 def extract_style_hints_from_url(board_url: str) -> dict:

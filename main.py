@@ -13,7 +13,7 @@ from typing import Optional, List
 import logging
 import os
 
-from pinterest_scraper import get_pinterest_images, extract_style_hints_from_url
+from pinterest_scraper import get_pinterest_images, get_pinterest_image_urls, extract_style_hints_from_url
 from ai_client import (
     extract_style,
     retrieve_candidates,
@@ -539,7 +539,7 @@ async def curate_pinterest(request: PinterestRequest):
             "pieces": final_pieces,
             "style_profile": style_profile,
             "ai_powered": use_ai,
-            "pinterest_images": pinterest_images[:6] if pinterest_images else []
+            "pinterest_images": get_pinterest_image_urls(pinterest_url, max_urls=6)
         }
         
     except Exception as e:
