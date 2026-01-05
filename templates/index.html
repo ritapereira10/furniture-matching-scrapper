@@ -526,6 +526,142 @@
             text-align: center;
         }
         
+        /* Feedback Section */
+        .feedback-section {
+            display: none;
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 1rem;
+            margin: 1.5rem auto;
+            max-width: 500px;
+            text-align: center;
+        }
+        
+        .feedback-section.active {
+            display: block;
+        }
+        
+        .feedback-prompt {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .feedback-question {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .feedback-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .feedback-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            background: white;
+            cursor: pointer;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .feedback-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .feedback-btn.thumbs-up:hover {
+            border-color: #4CAF50;
+            background: #E8F5E9;
+        }
+        
+        .feedback-btn.thumbs-down:hover {
+            border-color: #f44336;
+            background: #FFEBEE;
+        }
+        
+        .feedback-btn.selected {
+            transform: scale(1.1);
+        }
+        
+        .feedback-btn.thumbs-up.selected {
+            border-color: #4CAF50;
+            background: #4CAF50;
+        }
+        
+        .feedback-btn.thumbs-down.selected {
+            border-color: #f44336;
+            background: #f44336;
+        }
+        
+        .feedback-form {
+            margin-top: 1rem;
+        }
+        
+        .feedback-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            resize: vertical;
+            min-height: 80px;
+            max-height: 150px;
+        }
+        
+        .feedback-form-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 0.75rem;
+        }
+        
+        .feedback-submit-btn {
+            padding: 0.5rem 1.25rem;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        
+        .feedback-submit-btn:hover {
+            background: #555;
+        }
+        
+        .feedback-skip-btn {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            color: #888;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        
+        .feedback-skip-btn:hover {
+            background: #f5f5f5;
+        }
+        
+        .feedback-thanks {
+            color: #4CAF50;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 0.5rem;
+        }
+        
         /* Explainability on Cards */
         .piece-explanation {
             background: #f8f9fa;
@@ -1157,6 +1293,31 @@
         
         <div class="collection" id="collection"></div>
         
+        <!-- Feedback Section -->
+        <div class="feedback-section" id="feedback-section">
+            <div class="feedback-prompt" id="feedback-prompt">
+                <span class="feedback-question">How did we do?</span>
+                <div class="feedback-buttons">
+                    <button class="feedback-btn thumbs-up" onclick="submitFeedback('positive')" title="Good matches">
+                        <span>👍</span>
+                    </button>
+                    <button class="feedback-btn thumbs-down" onclick="submitFeedback('negative')" title="Could be better">
+                        <span>👎</span>
+                    </button>
+                </div>
+            </div>
+            <div class="feedback-form" id="feedback-form" style="display: none;">
+                <textarea class="feedback-textarea" id="feedback-text" placeholder="Tell us more (optional)..." maxlength="500"></textarea>
+                <div class="feedback-form-buttons">
+                    <button class="feedback-submit-btn" onclick="submitFeedbackWithText()">Send Feedback</button>
+                    <button class="feedback-skip-btn" onclick="skipFeedbackText()">Skip</button>
+                </div>
+            </div>
+            <div class="feedback-thanks" id="feedback-thanks" style="display: none;">
+                Thanks for your feedback! It helps us improve.
+            </div>
+        </div>
+        
         <!-- Newsletter Section -->
         <div class="newsletter-section" id="newsletter-section">
             <div class="newsletter-title chunky" data-i18n="newsletter-title">Stay in the Loop</div>
@@ -1685,6 +1846,10 @@
                 document.getElementById('price-filter-section').classList.add('active');
                 document.getElementById('price-slider').value = 1000;
                 document.getElementById('price-display').textContent = '€1000+';
+                
+                // Show feedback section and reset it
+                resetFeedbackUI();
+                document.getElementById('feedback-section').classList.add('active');
                 document.getElementById('price-filter-info').textContent = `Showing ${data.pieces.length} items`;
                 
                 // Scroll to showroom smoothly
@@ -1917,6 +2082,72 @@
                     </div>
                 `;
                 collectionDiv.appendChild(pieceEl);
+            });
+        }
+        
+        let currentFeedbackRating = null;
+        const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        
+        function submitFeedback(rating) {
+            currentFeedbackRating = rating;
+            
+            document.querySelectorAll('.feedback-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            const selectedBtn = document.querySelector(`.feedback-btn.thumbs-${rating === 'positive' ? 'up' : 'down'}`);
+            if (selectedBtn) selectedBtn.classList.add('selected');
+            
+            document.getElementById('feedback-form').style.display = 'block';
+        }
+        
+        async function submitFeedbackWithText() {
+            const feedbackText = document.getElementById('feedback-text').value.trim();
+            await sendFeedbackToServer(feedbackText);
+        }
+        
+        async function skipFeedbackText() {
+            await sendFeedbackToServer(null);
+        }
+        
+        async function sendFeedbackToServer(feedbackText) {
+            try {
+                const response = await fetch('/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        rating: currentFeedbackRating,
+                        feedback_text: feedbackText,
+                        style_profile: currentData?.style_profile || null,
+                        search_query: currentData?.search_query || null,
+                        results_count: currentData?.pieces?.length || 0,
+                        session_id: sessionId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                document.getElementById('feedback-prompt').style.display = 'none';
+                document.getElementById('feedback-form').style.display = 'none';
+                document.getElementById('feedback-thanks').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Failed to submit feedback:', error);
+                document.getElementById('feedback-thanks').textContent = 'Thanks for your feedback!';
+                document.getElementById('feedback-thanks').style.display = 'block';
+                document.getElementById('feedback-prompt').style.display = 'none';
+                document.getElementById('feedback-form').style.display = 'none';
+            }
+        }
+        
+        function resetFeedbackUI() {
+            currentFeedbackRating = null;
+            document.getElementById('feedback-prompt').style.display = 'flex';
+            document.getElementById('feedback-form').style.display = 'none';
+            document.getElementById('feedback-thanks').style.display = 'none';
+            document.getElementById('feedback-text').value = '';
+            document.querySelectorAll('.feedback-btn').forEach(btn => {
+                btn.classList.remove('selected');
             });
         }
     </script>

@@ -12,6 +12,8 @@ import re
 from typing import Optional, List
 import logging
 import os
+import psycopg2
+from psycopg2.extras import Json
 
 from pinterest_scraper import get_pinterest_images, get_pinterest_image_urls, extract_style_hints_from_url
 from ai_client import (
@@ -697,6 +699,53 @@ async def refine_results(request: RefineRequest):
     except Exception as e:
         logger.error(f"Refinement failed: {e}")
         return {"error": "Failed to refine results", "details": str(e)}
+
+
+class FeedbackRequest(BaseModel):
+    rating: str
+    feedback_text: Optional[str] = None
+    style_profile: Optional[dict] = None
+    search_query: Optional[str] = None
+    results_count: Optional[int] = None
+    session_id: Optional[str] = None
+
+
+def get_db_connection():
+    """Get a database connection."""
+    return psycopg2.connect(os.environ.get("DATABASE_URL"))
+
+
+@app.post("/feedback")
+async def submit_feedback(request: FeedbackRequest):
+    """
+    Store user feedback about AI curation results.
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute("""
+            INSERT INTO feedback (session_id, rating, feedback_text, style_profile, search_query, results_count)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            request.session_id,
+            request.rating,
+            request.feedback_text,
+            Json(request.style_profile) if request.style_profile else None,
+            request.search_query,
+            request.results_count
+        ))
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        logger.info(f"Feedback stored: {request.rating}")
+        return {"success": True, "message": "Thank you for your feedback!"}
+        
+    except Exception as e:
+        logger.error(f"Failed to store feedback: {e}")
+        return {"success": False, "message": "Failed to save feedback"}
 
 
 if __name__ == "__main__":
