@@ -21,16 +21,21 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15"
 }
 
-# CSS selectors centralised so it’s easy to tweak if MP changes DOM
+# CSS selectors centralised so it's easy to tweak if MP changes DOM.
+# Marktplaats now renders listing cards as `<li class="hz-Listing ...">`
+# with CSS-module class names that carry a random per-build hash suffix
+# (e.g. "ListingTitle_hz-Listing-title-new__YIv8B"), so selectors match on
+# the stable, unhashed prefix via `*=` substring matching rather than an
+# exact class or the old `data-testid` attributes, which no longer exist.
 SEL = {
-    "card": "li.mp-Listing",
-    "title": "[data-testid='listing-title']",
-    "price": "[data-testid='ad-price']",
-    "location": "[data-testid='location']",
-    "date": "[data-testid='date']",
+    "card": "li.hz-Listing",
+    "title": '[class*="ListingTitle_hz-Listing-title"]',
+    "price": '[class*="ListingPrice_hz-Listing-price"]',
+    "location": '[data-testid="location-label"]',
+    "date": '[class*="ListingDate_hz-Listing-date"]',
     "link": "a[href]",
     "image": "img",
-    "desc": "[data-testid='description']",
+    "desc": '[class*="ListingDescription_hz-Listing-description"]',
 }
 
 CITY_POSTCODES = {
