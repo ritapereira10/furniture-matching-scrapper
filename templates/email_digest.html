@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atelier — Your Weekly Picks</title>
+</head>
+<body style="margin:0; padding:0; background:#FFFEF0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFEF0;">
+<tr>
+<td align="center" style="padding: 32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px; background:#FFFFFF; border:3px solid #0A0A0A; border-radius:16px; overflow:hidden;">
+
+  <!-- Header -->
+  <tr>
+    <td style="background:#0A0A0A; padding:28px 24px; text-align:center;">
+      <div style="color:#FBBA16; font-size:26px; font-weight:900; letter-spacing:-0.02em; text-transform:uppercase;">✨ Atelier</div>
+      <div style="color:#FFFFFF; font-size:13px; margin-top:4px; opacity:0.8;">Your weekly picks are in</div>
+    </td>
+  </tr>
+  <tr>
+    <td style="background:#2A4FDB; height:4px; line-height:4px; font-size:0;">&nbsp;</td>
+  </tr>
+
+  <!-- Intro -->
+  <tr>
+    <td style="padding:24px 24px 8px 24px;">
+      <p style="margin:0; font-size:15px; line-height:1.5; color:#0A0A0A;">
+        {% if styles_desc %}
+          We found <strong>{{ pieces|length }} new piece{{ 's' if pieces|length != 1 else '' }}</strong> matching your <strong>{{ styles_desc }}</strong> vibe in <strong>{{ city|capitalize }}</strong>.
+        {% else %}
+          We found <strong>{{ pieces|length }} new piece{{ 's' if pieces|length != 1 else '' }}</strong> in <strong>{{ city|capitalize }}</strong> since your last email.
+        {% endif %}
+      </p>
+    </td>
+  </tr>
+
+  <!-- Items -->
+  {% for piece in pieces %}
+  <tr>
+    <td style="padding:12px 24px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:2px solid #0A0A0A; border-radius:12px;">
+        <tr>
+          {% if piece.image %}
+          <td width="110" style="padding:12px; vertical-align:top;">
+            <img src="{{ piece.image }}" width="90" height="90" alt="" style="display:block; width:90px; height:90px; object-fit:cover; border-radius:8px; border:1px solid #0A0A0A;">
+          </td>
+          {% endif %}
+          <td style="padding:12px 12px 12px 0; vertical-align:top;">
+            <div style="font-size:15px; font-weight:700; color:#0A0A0A; margin-bottom:4px;">{{ piece.title_translated or piece.title }}</div>
+            <div style="font-size:14px; font-weight:700; color:#E22025; margin-bottom:2px;">{{ piece.price }}</div>
+            <div style="font-size:12px; color:#0A0A0A; opacity:0.65; margin-bottom:6px;">{{ piece.location }}</div>
+            {% if piece.explanation %}
+            <div style="font-size:12px; color:#004922; line-height:1.4; margin-bottom:8px;">{{ piece.explanation }}</div>
+            {% endif %}
+            <a href="{{ piece.url }}" style="display:inline-block; padding:6px 14px; background:#0A0A0A; color:#FFFFFF; text-decoration:none; border:1px solid #0A0A0A; border-radius:8px; font-size:12px; font-weight:700;">View listing →</a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  {% endfor %}
+
+  <!-- Footer -->
+  <tr>
+    <td style="padding:24px; text-align:center; border-top:2px solid #0A0A0A; margin-top:12px;">
+      <p style="margin:0 0 8px 0; font-size:12px; color:#0A0A0A; opacity:0.7;">You're getting this because you subscribed to weekly picks on Atelier.</p>
+      <a href="{{ unsubscribe_url }}" style="font-size:12px; color:#0A0A0A; text-decoration:underline;">Unsubscribe from this search</a>
+    </td>
+  </tr>
+
+</table>
+</td>
+</tr>
+</table>
+</body>
+</html>

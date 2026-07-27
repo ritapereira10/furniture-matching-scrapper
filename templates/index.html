@@ -17,15 +17,15 @@
         :root {
             --gold-yellow: #FBBA16;
             --dark-green: #004922;
-            --light-teal: #BCCCD0;
             --bright-red: #E22025;
-            --soft-pink: #E2B2B4;
-            --navy-blue: #1E435D;
-            --mint-green: #BDB9B6;
-            --coral-orange: #EB0B88;
+            --navy-blue: #2A4FDB;
             --white: #FFFFFF;
             --black: #0A0A0A;
             --light-gray: #F5F5F5;
+            --cream: #FFFEF0;
+            --hard-shadow: 6px 6px 0 var(--black);
+            --hard-shadow-sm: 4px 4px 0 var(--black);
+            --hard-shadow-lg: 10px 10px 0 var(--black);
         }
         
         body {
@@ -41,6 +41,49 @@
             font-weight: 700;
         }
         
+        /* Illuminated sign box — recurring "backlit signage" component */
+        .sign-box {
+            position: relative;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            background: var(--black);
+            border-radius: 14px;
+            padding: 0.6rem 1.4rem;
+            overflow: hidden;
+            isolation: isolate;
+        }
+
+        .sign-box::before {
+            content: '';
+            position: absolute;
+            inset: -20% -10%;
+            background: radial-gradient(ellipse at center, rgba(251, 186, 22, 0.35) 0%, rgba(251, 186, 22, 0) 65%);
+            z-index: -1;
+        }
+
+        .sign-box-text {
+            font-family: 'Space Grotesk', 'DM Sans', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--gold-yellow);
+            letter-spacing: 0.02em;
+        }
+
+        /* Flat geometric shape accents, scattered decoratively near headlines */
+        .shape-accent {
+            position: absolute;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @media (max-width: 640px) {
+            /* Decorative only — hide on narrow screens so they never crowd the copy */
+            .shape-accent {
+                display: none;
+            }
+        }
+
         /* Landing Page */
         .landing {
             min-height: 100vh;
@@ -50,11 +93,31 @@
             align-items: center;
             padding: 2rem;
             text-align: center;
-            background: #FFFEF0;
+            background: var(--cream);
+            position: relative;
+            overflow: hidden;
         }
-        
+
         .landing-header {
             margin-bottom: 3rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Persistent brand mark, top-left, mirrors the lang selector on the right */
+        .brand-mark {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            z-index: 1000;
+        }
+
+        .brand-mark .sign-box {
+            padding: 0.4rem 1rem;
+        }
+
+        .brand-mark .sign-box-text {
+            font-size: 0.85rem;
         }
         
         .landing-title {
@@ -81,31 +144,33 @@
             gap: 1.5rem;
             max-width: 800px;
             width: 100%;
+            position: relative;
+            z-index: 1;
         }
         
         .entry-card {
             background: var(--white);
             padding: 2rem 1.5rem;
-            border-radius: 16px;
+            border-radius: 14px;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.15s ease;
             border: 3px solid var(--black);
             position: relative;
             overflow: visible;
-            box-shadow: 6px 6px 0 var(--black);
+            box-shadow: var(--hard-shadow);
         }
-        
+
         .entry-card:nth-child(1) {
-            background: #E60023;
+            background: var(--bright-red);
         }
-        
+
         .entry-card:nth-child(2) {
-            background: #89CFF0;
+            background: var(--navy-blue);
         }
-        
+
         .entry-card:hover {
             transform: translate(-4px, -4px);
-            box-shadow: 10px 10px 0 var(--black);
+            box-shadow: var(--hard-shadow-lg);
         }
         
         .entry-icon {
@@ -143,26 +208,29 @@
         }
         
         .back-button {
-            background: var(--black);
-            border: none;
-            color: var(--white);
+            background: var(--white);
+            border: 3px solid var(--black);
+            color: var(--black);
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
             margin-bottom: 2rem;
-            transition: all 0.3s ease;
+            transition: all 0.15s ease;
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            border-radius: 50px;
+            padding: 0.65rem 1.4rem;
+            border-radius: 10px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            box-shadow: var(--hard-shadow-sm);
         }
-        
+
         .back-button:hover {
             background: var(--bright-red);
-            transform: scale(1.05);
+            color: var(--white);
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 var(--black);
         }
         
         .input-header {
@@ -215,23 +283,24 @@
         
         .submit-button {
             width: 100%;
-            padding: 1.5rem;
+            padding: 1.4rem;
             background: var(--black);
             color: var(--white);
-            border: none;
-            border-radius: 50px;
+            border: 3px solid var(--black);
+            border-radius: 14px;
             font-size: 1.1rem;
             font-weight: 900;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.15s ease;
             margin-top: 1.5rem;
             letter-spacing: 0.05em;
             text-transform: uppercase;
             box-shadow: 4px 4px 0 var(--gold-yellow);
         }
-        
+
         .submit-button:hover {
             background: var(--dark-green);
+            border-color: var(--dark-green);
             transform: translate(-2px, -2px);
             box-shadow: 6px 6px 0 var(--gold-yellow);
         }
@@ -323,7 +392,7 @@
         /* Style Profile Card - Compact & Collapsible */
         .style-profile-card {
             background: var(--white);
-            border: 2px solid #ddd;
+            border: 2px solid var(--black);
             border-radius: 12px;
             padding: 0.75rem 1rem;
             margin: 1rem auto;
@@ -447,8 +516,8 @@
         /* Price Filter */
         .price-filter-section {
             display: none;
-            background: #f9f9f9;
-            border: 1px solid #eee;
+            background: var(--white);
+            border: 2px solid var(--black);
             border-radius: 12px;
             padding: 0.75rem 1rem;
             margin: 1rem auto;
@@ -529,8 +598,8 @@
         /* Feedback Section */
         .feedback-section {
             display: none;
-            background: #f9f9f9;
-            border: 1px solid #eee;
+            background: var(--white);
+            border: 2px solid var(--black);
             border-radius: 12px;
             padding: 1rem;
             margin: 1.5rem auto;
@@ -685,8 +754,8 @@
         }
         
         .matched-chip {
-            background: #e8f5e9;
-            color: #2e7d32;
+            background: var(--gold-yellow);
+            color: var(--black);
             padding: 0.2rem 0.5rem;
             border-radius: 4px;
             font-size: 0.7rem;
@@ -699,66 +768,80 @@
             color: #888;
         }
         
-        /* Newsletter Section */
+        /* Newsletter Section — illuminated sign box */
         .newsletter-section {
-            background: linear-gradient(135deg, #E60023 0%, #ff6b6b 100%);
+            position: relative;
+            background: var(--black);
             border: 3px solid var(--black);
             border-radius: 16px;
-            padding: 2rem;
+            padding: 2.5rem 2rem;
             margin: 3rem auto;
             max-width: 600px;
             text-align: center;
-            box-shadow: 6px 6px 0 var(--black);
+            box-shadow: var(--hard-shadow);
+            overflow: hidden;
+            isolation: isolate;
         }
-        
+
+        .newsletter-section::before {
+            content: '';
+            position: absolute;
+            inset: -30% -10% auto -10%;
+            height: 140%;
+            background: radial-gradient(ellipse at top, rgba(251, 186, 22, 0.4) 0%, rgba(251, 186, 22, 0) 60%);
+            z-index: -1;
+        }
+
         .newsletter-title {
-            color: white;
+            color: var(--gold-yellow);
             font-size: 1.5rem;
             font-weight: 900;
             text-transform: uppercase;
             margin-bottom: 0.5rem;
         }
-        
+
         .newsletter-desc {
-            color: white;
+            color: var(--white);
             font-size: 0.95rem;
             margin-bottom: 1.5rem;
-            opacity: 0.9;
+            opacity: 0.85;
         }
-        
+
         .newsletter-form {
             display: flex;
             gap: 0.5rem;
             max-width: 400px;
             margin: 0 auto;
         }
-        
+
         .newsletter-input {
             flex: 1;
             padding: 0.75rem 1rem;
-            border: 2px solid var(--black);
-            border-radius: 50px;
+            border: 2px solid var(--white);
+            border-radius: 10px;
             font-size: 0.9rem;
             font-family: 'DM Sans', sans-serif;
+            background: var(--white);
         }
-        
+
         .newsletter-btn {
             padding: 0.75rem 1.5rem;
-            background: var(--black);
-            color: white;
-            border: none;
-            border-radius: 50px;
+            background: var(--gold-yellow);
+            color: var(--black);
+            border: 2px solid var(--gold-yellow);
+            border-radius: 10px;
             font-weight: 700;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.15s ease;
         }
-        
+
         .newsletter-btn:hover {
-            transform: scale(1.05);
+            transform: translate(-2px, -2px);
+            box-shadow: 4px 4px 0 rgba(255,255,255,0.3);
         }
-        
+
         .newsletter-success {
-            color: white;
+            color: var(--gold-yellow);
             font-weight: 700;
             display: none;
         }
@@ -799,10 +882,17 @@
             padding: 0.75rem 1.5rem;
             background: var(--black);
             color: white;
-            border: none;
-            border-radius: 50px;
+            border: 2px solid var(--black);
+            border-radius: 10px;
             font-weight: 700;
             cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+
+        .refine-btn:hover {
+            background: var(--dark-green);
+            border-color: var(--dark-green);
+            transform: translate(-2px, -2px);
         }
         
         .refine-changes {
@@ -844,6 +934,15 @@
             max-width: 900px;
             margin-left: auto;
             margin-right: auto;
+            position: relative;
+        }
+
+        .showroom-badge {
+            margin-bottom: 1.25rem;
+        }
+
+        .showroom-badge .sign-box-text {
+            font-size: 0.85rem;
         }
         
         .showroom-title {
@@ -909,16 +1008,15 @@
             position: absolute;
             top: 8px;
             right: 8px;
-            background: rgba(0, 0, 0, 0.85);
-            color: var(--white);
+            background: var(--black);
+            color: var(--gold-yellow);
             padding: 0.35rem 0.75rem;
             border-radius: 6px;
             font-weight: 700;
             font-size: 0.9rem;
-            border: none;
+            border: 1px solid var(--gold-yellow);
             box-shadow: none;
             z-index: 10;
-            backdrop-filter: blur(4px);
         }
         
         .piece-content {
@@ -960,18 +1058,20 @@
             background: var(--black);
             color: var(--white);
             text-decoration: none;
-            border-radius: 50px;
+            border-radius: 10px;
             font-size: 0.9rem;
             font-weight: 900;
             text-align: center;
-            transition: all 0.3s ease;
+            transition: all 0.15s ease;
             letter-spacing: 0.05em;
             text-transform: uppercase;
+            border: 2px solid var(--black);
         }
-        
+
         .piece-action:hover {
             background: var(--bright-red);
-            transform: scale(1.05);
+            border-color: var(--bright-red);
+            transform: translate(-2px, -2px);
         }
         
         .error {
@@ -992,12 +1092,13 @@
         
         /* Help Box */
         .help-box {
-            background: var(--baby-blue);
+            background: var(--white);
             border: 3px solid var(--black);
+            border-left: 8px solid var(--gold-yellow);
             border-radius: 12px;
             padding: 1rem 1.25rem;
             margin-top: 1rem;
-            box-shadow: 4px 4px 0 var(--black);
+            box-shadow: var(--hard-shadow-sm);
         }
         
         .help-title {
@@ -1064,6 +1165,11 @@
     </style>
 </head>
 <body>
+    <!-- Brand Mark -->
+    <div class="brand-mark">
+        <div class="sign-box"><span class="sign-box-text">✨ Atelier</span></div>
+    </div>
+
     <!-- Language Selector -->
     <div class="lang-selector">
         <select id="language-select" class="lang-select" onchange="changeLanguage(this.value)">
@@ -1077,11 +1183,28 @@
     
     <!-- Landing Page -->
     <div class="landing" id="landing">
+        <!-- decorative flat geometric shape accents -->
+        <svg class="shape-accent" style="top: 8%; left: 6%; width: 70px; opacity: 0.9;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <path fill="var(--dark-green)" d="M50 0 L61 35 L98 35 L68 57 L79 92 L50 70 L21 92 L32 57 L2 35 L39 35 Z"/>
+        </svg>
+        <svg class="shape-accent" style="top: 12%; right: 8%; width: 60px; opacity: 0.9;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <path fill="var(--navy-blue)" d="M0 50 A50 50 0 0 1 100 50 Z"/>
+        </svg>
+        <svg class="shape-accent" style="bottom: 10%; left: 10%; width: 50px; opacity: 0.85;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="50" cy="50" rx="42" ry="50" fill="var(--bright-red)"/>
+        </svg>
+        <svg class="shape-accent" style="bottom: 14%; right: 10%; width: 46px; opacity: 0.9;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="30" cy="30" r="18" fill="var(--bright-red)"/>
+            <circle cx="70" cy="30" r="18" fill="var(--gold-yellow)"/>
+            <circle cx="30" cy="70" r="18" fill="var(--dark-green)"/>
+            <circle cx="70" cy="70" r="18" fill="var(--navy-blue)"/>
+        </svg>
+
         <div class="landing-header">
             <h1 class="landing-title chunky">ATELIER</h1>
             <p class="landing-subtitle" data-i18n="landing-subtitle">find your vibe ✨ curated vintage furniture that slaps</p>
         </div>
-        
+
         <div class="entry-cards">
             <div class="entry-card" onclick="showInput('pinterest')">
                 <div class="entry-icon">📌</div>
@@ -1226,6 +1349,9 @@
         <button class="back-button" onclick="showLanding()" data-i18n="btn-start-over">← START OVER</button>
         
         <div class="showroom-header">
+            <div class="showroom-badge">
+                <div class="sign-box"><span class="sign-box-text">✨ curated for you</span></div>
+            </div>
             <h2 class="showroom-title chunky" id="collection-title">YOUR CURATED COLLECTION</h2>
             <p class="showroom-description" id="collection-description"></p>
         </div>
@@ -1327,6 +1453,7 @@
                 <button class="newsletter-btn chunky" onclick="subscribeNewsletter()" data-i18n="newsletter-btn">Subscribe</button>
             </div>
             <p class="newsletter-success" id="newsletter-success" data-i18n="newsletter-success">You're in! Check your inbox soon ✨</p>
+            <div class="error" id="newsletter-error"></div>
         </div>
     </div>
     
@@ -1612,7 +1739,9 @@
             
             errorDiv.classList.remove('active');
             showLoading();
-            
+            currentCity = city;
+            currentSource = url;
+
             try {
                 const lang = localStorage.getItem('preferredLanguage') || 'en';
                 const response = await fetch('/curate-pinterest', {
@@ -1658,7 +1787,9 @@
             
             errorDiv.classList.remove('active');
             showLoading();
-            
+            currentCity = city;
+            currentSource = description;
+
             try {
                 const lang = localStorage.getItem('preferredLanguage') || 'en';
                 const response = await fetch('/curate-natural', {
@@ -1718,6 +1849,8 @@
         
         // Store current data for refinement
         let currentData = null;
+        let currentCity = 'amsterdam';
+        let currentSource = null;
         
         function displayCollection(data) {
             hideLoading();
@@ -1956,22 +2089,47 @@
             }
         }
         
-        function subscribeNewsletter() {
+        async function subscribeNewsletter() {
             const email = document.getElementById('newsletter-email').value.trim();
+            const errorDiv = document.getElementById('newsletter-error');
+            errorDiv.classList.remove('active');
+
             if (!email || !email.includes('@')) {
-                alert('Please enter a valid email address');
+                errorDiv.textContent = 'Please enter a valid email address';
+                errorDiv.classList.add('active');
                 return;
             }
-            
-            const subscription = {
-                email: email,
-                style_profile: currentData?.style_profile || {},
-                subscribed_at: new Date().toISOString()
-            };
-            localStorage.setItem('atelier_subscription', JSON.stringify(subscription));
-            
-            document.getElementById('newsletter-form').style.display = 'none';
-            document.getElementById('newsletter-success').style.display = 'block';
+
+            const btn = document.querySelector('.newsletter-btn');
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: email,
+                        city: currentCity,
+                        style_profile: currentData?.style_profile || {},
+                        source_url: currentSource
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to subscribe');
+                }
+
+                document.getElementById('newsletter-form').style.display = 'none';
+                document.getElementById('newsletter-success').style.display = 'block';
+            } catch (error) {
+                errorDiv.textContent = 'Something went wrong, please try again';
+                errorDiv.classList.add('active');
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+            }
         }
         
         function toggleStyleProfile() {
