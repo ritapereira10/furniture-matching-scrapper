@@ -12,6 +12,7 @@ import re
 from typing import Optional, List
 import logging
 import os
+import uuid
 import psycopg2
 from psycopg2.extras import Json
 
@@ -23,6 +24,17 @@ from ai_client import (
     style_profile_to_queries,
     refine_style,
     translate_titles_batch
+)
+from marktplaats import (
+    BASE,
+    HEADERS,
+    SEL,
+    CITY_POSTCODES,
+    CITY_REGIONS,
+    parse_price,
+    extract_id,
+    is_location_in_city_region,
+    search_marktplaats_listings,
 )
 
 # Set up logging
@@ -60,45 +72,6 @@ app = FastAPI(
     """,
     version="1.0.0"
 )
-
-BASE = "https://www.marktplaats.nl"
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15"
-}
-
-# CSS selectors centralised so it’s easy to tweak if MP changes DOM
-SEL = {
-    "card": "li.mp-Listing",
-    "title": "[data-testid='listing-title']",
-    "price": "[data-testid='ad-price']",
-    "location": "[data-testid='location']",
-    "date": "[data-testid='date']",
-    "link": "a[href]",
-    "image": "img",
-    "desc": "[data-testid='description']",
-}
-
-def parse_price(text: Optional[str]) -> Optional[float]:
-    if not text:
-        return None
-    t = text.strip().lower()
-    if any(x in t for x in ["bieden", "gratis", "n.o.t.k", "prijs op aanvraag"]):
-        return None
-    m = re.findall(r"[\d\.\,]+", t)
-    if not m:
-        return None
-    try:
-        return float(m[0].replace(".", "").replace(",", "."))
-    except:
-        return None
-
-def extract_id(url: str) -> str:
-    # Common MP patterns like -m123456789 or /v/123456789
-    m = re.search(r"-(m?\d+)(?:\.|$|/)", url)
-    if m:
-        return m.group(1)
-    m = re.search(r"/v/(\d+)", url)
-    return m.group(1) if m else re.sub(r"\W+", "", url)[-24:]
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
@@ -367,121 +340,6 @@ def generate_specific_queries(furniture_types, aesthetics, materials):
     
     return list(set(queries))[:5]  # Dedupe and limit to 5
 
-CITY_POSTCODES = {
-    "amsterdam": "1012AB",
-    "rotterdam": "3011AD",
-    "den-haag": "2511AA",
-    "utrecht": "3511AA",
-    "eindhoven": "5611AA",
-    "groningen": "9711AA",
-    "tilburg": "5011AA",
-    "almere": "1311AA"
-}
-
-CITY_REGIONS = {
-    "amsterdam": ["amsterdam", "amstelveen", "diemen", "ouderkerk", "duivendrecht", "zaandam", "weesp", "abcoude", "uithoorn", "aalsmeer", "hoofddorp", "badhoevedorp", "schiphol"],
-    "rotterdam": ["rotterdam", "schiedam", "vlaardingen", "capelle", "ridderkerk", "barendrecht", "spijkenisse", "hoogvliet", "pernis", "delfshaven"],
-    "den-haag": ["den haag", "'s-gravenhage", "rijswijk", "voorburg", "leidschendam", "wassenaar", "delft", "zoetermeer", "loosduinen"],
-    "utrecht": ["utrecht", "nieuwegein", "ijsselstein", "houten", "zeist", "de bilt", "bunnik", "maarssen", "bilthoven"],
-    "eindhoven": ["eindhoven", "veldhoven", "geldrop", "nuenen", "best", "son", "waalre", "valkenswaard"],
-    "groningen": ["groningen", "haren", "hoogezand", "zuidhorn", "leek", "roden"],
-    "tilburg": ["tilburg", "goirle", "oisterwijk", "gilze", "rijen", "dongen", "waalwijk"],
-    "almere": ["almere", "lelystad", "huizen", "naarden", "bussum", "hilversum", "muiden"]
-}
-
-def is_location_in_city_region(location: str, city: str) -> bool:
-    """Check if a location string matches the city or nearby areas within ~20km."""
-    if not location:
-        return True
-    
-    location_lower = location.lower().strip()
-    city_lower = city.lower()
-    
-    if city_lower in location_lower:
-        return True
-    
-    allowed_areas = CITY_REGIONS.get(city_lower, [city_lower])
-    for area in allowed_areas:
-        if area in location_lower:
-            return True
-    
-    return False
-
-def search_marktplaats_listings(queries: list, city: str = "amsterdam", max_per_query: int = 8) -> list:
-    """Search Marktplaats and return raw listing data within 20km of city."""
-    postcode = CITY_POSTCODES.get(city, "1012AB")
-    all_listings = []
-    seen_ids = set()
-    
-    for query in queries[:6]:
-        try:
-            search_url = f"{BASE}/z.html"
-            params = {
-                "query": query,
-                "postcode": postcode,
-                "distanceMeters": 20000
-            }
-            logger.info(f"Searching {city} ({postcode}): {query}")
-            
-            resp = requests.get(search_url, params=params, headers=HEADERS, timeout=10)
-            soup = BeautifulSoup(resp.content, "lxml")
-            
-            listings = soup.select(SEL["card"])[:max_per_query]
-            
-            if len(listings) == 0:
-                alt_selectors = ["li[data-testid='listing-item']", "article[data-testid='listing']", ".hz-Listing"]
-                for alt_sel in alt_selectors:
-                    listings = soup.select(alt_sel)
-                    if len(listings) > 0:
-                        break
-            
-            for listing in listings:
-                title_el = listing.select_one(SEL["title"]) or listing.select_one("h3")
-                price_el = listing.select_one(SEL["price"])
-                img_el = listing.select_one(SEL["image"])
-                link_el = listing.select_one(SEL["link"])
-                loc_el = listing.select_one(SEL["location"])
-                desc_el = listing.select_one(SEL["desc"])
-                
-                if not title_el or not link_el:
-                    continue
-                
-                href = link_el.get("href", "")
-                listing_id = re.search(r'/a(\d+)', href)
-                lid = listing_id.group(1) if listing_id else href
-                
-                if lid in seen_ids:
-                    continue
-                seen_ids.add(lid)
-                
-                title = title_el.get_text(strip=True)
-                price_text = price_el.get_text(strip=True) if price_el else "Prijs op aanvraag"
-                image_url = img_el.get("src") if img_el and img_el.has_attr("src") else None
-                listing_url = urljoin(BASE, href)
-                location = loc_el.get_text(strip=True) if loc_el else city.capitalize()
-                description = desc_el.get_text(strip=True)[:200] if desc_el else ""
-                
-                if not is_location_in_city_region(location, city):
-                    logger.debug(f"Filtered out item outside region: {location} (searching {city})")
-                    continue
-                
-                all_listings.append({
-                    "id": lid,
-                    "title": title,
-                    "price": price_text,
-                    "image": image_url,
-                    "url": listing_url,
-                    "location": location,
-                    "description": description
-                })
-                
-        except Exception as e:
-            logger.error(f"Search failed for '{query}': {e}")
-            continue
-    
-    logger.info(f"After location filtering: {len(all_listings)} listings in {city} region")
-    return all_listings
-
 @app.post("/curate-pinterest")
 async def curate_pinterest(request: PinterestRequest):
     """
@@ -749,6 +607,63 @@ def get_db_connection():
     return psycopg2.connect(os.environ.get("DATABASE_URL"))
 
 
+def init_db():
+    """Create tables if they don't exist yet. Safe to run on every startup."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS feedback (
+            id SERIAL PRIMARY KEY,
+            session_id TEXT,
+            rating TEXT,
+            feedback_text TEXT,
+            style_profile JSONB,
+            search_query TEXT,
+            results_count INTEGER,
+            created_at TIMESTAMPTZ DEFAULT now()
+        )
+    """)
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS subscriptions (
+            id SERIAL PRIMARY KEY,
+            email TEXT NOT NULL,
+            city TEXT NOT NULL,
+            style_profile JSONB,
+            search_queries JSONB,
+            source_url TEXT,
+            unsubscribe_token TEXT UNIQUE NOT NULL,
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT now(),
+            last_sent_at TIMESTAMPTZ
+        )
+    """)
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS sent_listings (
+            id SERIAL PRIMARY KEY,
+            subscription_id INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+            listing_id TEXT NOT NULL,
+            sent_at TIMESTAMPTZ DEFAULT now(),
+            UNIQUE (subscription_id, listing_id)
+        )
+    """)
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+@app.on_event("startup")
+def on_startup():
+    try:
+        init_db()
+        logger.info("Database schema verified/created")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+
+
 @app.post("/feedback")
 async def submit_feedback(request: FeedbackRequest):
     """
@@ -782,5 +697,82 @@ async def submit_feedback(request: FeedbackRequest):
         return {"success": False, "message": "Failed to save feedback"}
 
 
+class SubscribeRequest(BaseModel):
+    email: str
+    city: Optional[str] = "amsterdam"
+    style_profile: Optional[dict] = None
+    source_url: Optional[str] = None
+
+
+@app.post("/subscribe")
+async def subscribe(request: SubscribeRequest):
+    """
+    Turn a curated result into a standing weekly-digest subscription.
+    Stores the style profile + derived search queries so weekly_digest.py
+    can re-scrape and email only new matches.
+    """
+    email = (request.email or "").strip()
+    if not email or "@" not in email:
+        return {"success": False, "message": "Please enter a valid email address"}
+
+    style_profile = request.style_profile or {}
+    search_queries = style_profile_to_queries(style_profile) if style_profile else []
+    token = uuid.uuid4().hex
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO subscriptions (email, city, style_profile, search_queries, source_url, unsubscribe_token)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            email,
+            request.city or "amsterdam",
+            Json(style_profile),
+            Json(search_queries),
+            request.source_url,
+            token,
+        ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        logger.info(f"New subscription: {email} ({request.city})")
+        return {"success": True, "message": "You're in! Check your inbox soon."}
+
+    except Exception as e:
+        logger.error(f"Failed to store subscription: {e}")
+        return {"success": False, "message": "Failed to subscribe, please try again"}
+
+
+@app.get("/unsubscribe", response_class=HTMLResponse)
+async def unsubscribe(request: Request, token: str = Query(...)):
+    """Deactivate a subscription via its unsubscribe token."""
+    status = "invalid"
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            "UPDATE subscriptions SET is_active = FALSE WHERE unsubscribe_token = %s RETURNING id",
+            (token,)
+        )
+        row = cur.fetchone()
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        status = "ok" if row else "invalid"
+
+    except Exception as e:
+        logger.error(f"Failed to unsubscribe token {token}: {e}")
+        status = "error"
+
+    return templates.TemplateResponse("unsubscribe.html", {"request": request, "status": status})
+
+
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
+    port = int(os.environ.get("PORT", 5000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)

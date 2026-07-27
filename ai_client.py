@@ -5,7 +5,8 @@ Provides three core AI functions:
 2. embed(items) - TF-IDF vectorization for semantic similarity
 3. explain_match(style, listing) - LLM explanations for matches
 
-Uses Replit AI Integrations for OpenAI access (no API key required, billed to credits).
+Uses the OpenAI API directly (set OPENAI_API_KEY; OPENAI_BASE_URL is optional,
+for OpenAI-compatible proxies).
 Uses scikit-learn TF-IDF for local embeddings (free, no API calls).
 """
 
@@ -25,14 +26,14 @@ from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 
-AI_INTEGRATIONS_OPENAI_API_KEY = os.environ.get("AI_INTEGRATIONS_OPENAI_API_KEY")
-AI_INTEGRATIONS_OPENAI_BASE_URL = os.environ.get("AI_INTEGRATIONS_OPENAI_BASE_URL")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL")
 
 openai_client = None
-if AI_INTEGRATIONS_OPENAI_API_KEY and AI_INTEGRATIONS_OPENAI_BASE_URL:
+if OPENAI_API_KEY:
     openai_client = OpenAI(
-        api_key=AI_INTEGRATIONS_OPENAI_API_KEY,
-        base_url=AI_INTEGRATIONS_OPENAI_BASE_URL
+        api_key=OPENAI_API_KEY,
+        base_url=OPENAI_BASE_URL or None
     )
 
 STYLE_EXTRACTION_SCHEMA = {

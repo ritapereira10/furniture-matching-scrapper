@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atelier — Unsubscribe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --gold-yellow: #FBBA16;
+            --dark-green: #004922;
+            --bright-red: #E22025;
+            --navy-blue: #2A4FDB;
+            --black: #0A0A0A;
+            --cream: #FFFEF0;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream);
+            color: var(--black);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shape-accent {
+            position: absolute;
+            pointer-events: none;
+        }
+
+        @media (max-width: 640px) {
+            .shape-accent { display: none; }
+        }
+
+        .sign-box {
+            position: relative;
+            display: inline-flex;
+            background: var(--black);
+            border-radius: 14px;
+            padding: 0.5rem 1.2rem;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            isolation: isolate;
+        }
+
+        .sign-box::before {
+            content: '';
+            position: absolute;
+            inset: -30% -10%;
+            background: radial-gradient(ellipse at center, rgba(251, 186, 22, 0.35) 0%, rgba(251, 186, 22, 0) 65%);
+            z-index: -1;
+        }
+
+        .sign-box span {
+            font-family: 'Space Grotesk', 'DM Sans', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--gold-yellow);
+            letter-spacing: 0.02em;
+            font-size: 0.85rem;
+        }
+
+        .card {
+            position: relative;
+            z-index: 1;
+            background: white;
+            border: 3px solid var(--black);
+            border-radius: 14px;
+            box-shadow: 6px 6px 0 var(--black);
+            padding: 2.5rem 2rem;
+            max-width: 460px;
+        }
+
+        .icon { font-size: 2.5rem; margin-bottom: 1rem; }
+
+        h1 {
+            font-family: 'Space Grotesk', 'DM Sans', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        p {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            opacity: 0.85;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--black);
+            color: white;
+            text-decoration: none;
+            border: 2px solid var(--black);
+            border-radius: 10px;
+            font-weight: 700;
+            transition: transform 0.15s ease;
+        }
+
+        a:hover {
+            background: var(--dark-green);
+            border-color: var(--dark-green);
+            transform: translate(-2px, -2px);
+        }
+    </style>
+</head>
+<body>
+    <svg class="shape-accent" style="top: 8%; left: 8%; width: 56px; opacity: 0.9;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <path fill="var(--dark-green)" d="M50 0 L61 35 L98 35 L68 57 L79 92 L50 70 L21 92 L32 57 L2 35 L39 35 Z"/>
+    </svg>
+    <svg class="shape-accent" style="bottom: 10%; right: 9%; width: 48px; opacity: 0.9;" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="50" cy="50" rx="42" ry="50" fill="var(--navy-blue)"/>
+    </svg>
+
+    <div class="sign-box"><span>✨ Atelier</span></div>
+
+    <div class="card">
+        {% if status == "ok" %}
+            <div class="icon">✨</div>
+            <h1>You're unsubscribed</h1>
+            <p>No more weekly picks for this search &mdash; you won't hear from us again about it.</p>
+        {% elif status == "invalid" %}
+            <div class="icon">🤔</div>
+            <h1>Link not found</h1>
+            <p>This unsubscribe link looks like it's already been used or isn't valid anymore.</p>
+        {% else %}
+            <div class="icon">⚠️</div>
+            <h1>Something went wrong</h1>
+            <p>We couldn't process this right now &mdash; please try again in a bit.</p>
+        {% endif %}
+        <a href="/">Back to Atelier</a>
+    </div>
+</body>
+</html>
